@@ -1,55 +1,57 @@
-const PIPED_INSTANCES = [
-  'https://pipedapi.adminforge.de',
-  'https://piped-api.garudalinux.org',
-  'https://api.piped.yt',
-  'https://pipedapi.in.projectsegfau.lt',
-  'https://pipedapi.drgns.space'
+const INVIDIOUS_INSTANCES = [
+  'https://invidious.fdn.fr',
+  'https://invidious.privacyredirect.com',
+  'https://inv.nadeko.net',
+  'https://invidious.nerdvpn.de',
+  'https://invidious.lunar.icu',
+  'https://iv.datura.network',
+  'https://invidious.perennialte.ch'
 ];
 
-async function searchYouTube(query) {
-  for (const instance of PIPED_INSTANCES) {
+async function searchAndGetAudio(query) {
+  for (const instance of INVIDIOUS_INSTANCES) {
     try {
-      const res = await fetch(
-        `${instance}/search?q=${encodeURIComponent(query)}&filter=videos`,
-        { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(5000) }
+      // Search
+      const searchRes = await fetch(
+        `${instance}/api/v1/search?q=${encodeURIComponent(query)}&type=video&fields=videoId,title,author,lengthSeconds,videoThumbnails`,
+        { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(6000) }
       );
-      if (!res.ok) continue;
-      const data = await res.json();
-      const video = data?.items?.find(i => i.type === 'stream' || i.duration > 0);
-      if (video) {
-        const videoId = video.url?.replace('/watch?v=', '') || video.videoId;
-        return { videoId, instance };
-      }
-    } catch(e) { continue; }
-  }
-  return null;
-}
+      if (!searchRes.ok) continue;
+      const results = await searchRes.json();
+      if (!results?.length) continue;
 
-async function getAudioStream(videoId, instance) {
-  for (const inst of [instance, ...PIPED_INSTANCES.filter(i => i !== instance)]) {
-    try {
-      const res = await fetch(
-        `${inst}/streams/${videoId}`,
+      const video = results[0];
+      const videoId = video.videoId;
+
+      // Audio streams
+      const streamRes = await fetch(
+        `${instance}/api/v1/videos/${videoId}?fields=adaptiveFormats,formatStreams,title,author,lengthSeconds,videoThumbnails`,
         { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(8000) }
       );
-      if (!res.ok) continue;
-      const data = await res.json();
-      if (!data?.audioStreams?.length) continue;
+      if (!streamRes.ok) continue;
+      const streamData = await streamRes.json();
 
-      // Best audio quality
-      const streams = data.audioStreams.sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
-      const best = streams.find(s => s.mimeType?.includes('audio')) || streams[0];
+      const audioFormats = (streamData.adaptiveFormats || [])
+        .filter(f => f.type?.startsWith('audio/') && f.url)
+        .sort((a, b) => (b.bitrate || 0) - (a.bitrate || 0));
 
-      if (best?.url) {
-        return {
-          url: best.url,
-          title: data.title || '',
-          artist: data.uploader || 'Unknown',
-          duration: data.duration || 0,
-          image: data.thumbnailUrl || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
-          video_id: videoId
-        };
-      }
+      if (!audioFormats.length) continue;
+
+      const best = audioFormats[0];
+      const thumb = video.videoThumbnails?.find(t => t.quality === 'high')?.url ||
+                    video.videoThumbnails?.[0]?.url ||
+                    `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+
+      return {
+        url: best.url,
+        title: video.title || streamData.title || query,
+        artist: video.author || streamData.author || 'Unknown',
+        duration: video.lengthSeconds || streamData.lengthSeconds || 0,
+        image: thumb.startsWith('http') ? thumb : `${instance}${thumb}`,
+        video_id: videoId,
+        source: instance
+      };
+
     } catch(e) { continue; }
   }
   return null;
@@ -59,25 +61,13 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
   const { query, video_id } = req.query;
+  if (!query && !video_id) return res.status(400).json({ error: 'query or video_id required' });
 
   try {
-    let videoId = video_id;
-    let instance = PIPED_INSTANCES[0];
-
-    // Agar sirf video_id diya hai
-    if (!videoId) {
-      if (!query) return res.status(400).json({ error: 'query or video_id required' });
-      const result = await searchYouTube(query);
-      if (!result) return res.status(404).json({ error: 'No results found' });
-      videoId = result.videoId;
-      instance = result.instance;
-    }
-
-    const audioData = await getAudioStream(videoId, instance);
-    if (!audioData) return res.status(404).json({ error: 'No audio stream found' });
-
-    return res.status(200).json(audioData);
-
+    const searchQuery = query || video_id;
+    const result = await searchAndGetAudio(searchQuery);
+    if (!result) return res.status(404).json({ error: 'No audio found' });
+    return res.status(200).json(result);
   } catch(e) {
     return res.status(500).json({ error: e.message });
   }
