@@ -3,25 +3,16 @@ import crypto from 'crypto';
 function decryptUrl(encUrl) {
   try {
     const key = Buffer.from('38346591');
-    const iv = Buffer.alloc(8, 0);
-    
-    // Base64 decode
-    const enc = Buffer.from(encUrl, 'base64');
-    
-    // DES CBC with zero IV
-    const decipher = crypto.createDecipheriv('des-cbc', key, iv);
+    const decipher = crypto.createDecipheriv('des-ecb', key, '');
     decipher.setAutoPadding(false);
-    
-    let dec = Buffer.concat([decipher.update(enc), decipher.final()]);
-    let url = dec.toString('ascii').replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '').trim();
-    
-    url = url.replace('http://', 'https://');
-    url = url.replace('_96.mp4', '_320.mp4');
-    url = url.replace('_160.mp4', '_320.mp4');
-    
-    return url;
+    const decrypted = Buffer.concat([
+      decipher.update(Buffer.from(encUrl, 'base64')),
+      decipher.final()
+    ]).toString().replace(/\0/g, '').trim();
+    return decrypted.replace('http://', 'https://').replace('_96.mp4', '_320.mp4').replace('_160.mp4', '_320.mp4');
   } catch(e) {
-    return null;
+    // Fallback — remove ID2ie prefix, use CDN directly
+    return `https://aac.saavncdn.com/${encUrl.replace('ID2ie', '')}_320.mp4`;
   }
 }
 
@@ -44,17 +35,6 @@ export default async function handler(req, res) {
     if (!encUrl) return res.status(404).json({ error: 'No encrypted URL' });
 
     const audioUrl = decryptUrl(encUrl);
-
-    if (!audioUrl || audioUrl.length < 10) {
-      // Fallback — direct CDN URL try karo
-      const fallback = `https://aac.saavncdn.com/${encUrl.replace('ID2ie', '')}_320.mp4`;
-      return res.status(200).json({
-        url: null,
-        fallback,
-        raw_enc: encUrl,
-        debug: 'decryption failed'
-      });
-    }
 
     return res.status(200).json({
       url: audioUrl,
