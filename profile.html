@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Profile — Anime Verse</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    * { box-sizing: border-box; }
+    body { background: var(--bg); }
+    .pf-page { max-width: 500px; margin: 0 auto; padding-bottom: 40px; }
+
+    /* ===== TOP HERO ===== */
+    .pf-hero {
+      width: 100%;
+      height: 180px;
+      position: relative;
+      overflow: visible;
+      background: linear-gradient(135deg,
+        #C87740 0%, #8e44ad 50%, #2ca5e0 100%);
+      flex-shrink: 0;
+    }
+    .pf-hero-img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    /* Banner edit button */
+    .pf-banner-btn {
+      position: absolute;
+      top: 10px; right: 10px;
+      background: rgba(0,0,0,0.45);
+      border: none;
+      border-radius: 20px;
+      padding: 6px 12px;
+      color: #fff;
+      font-size: 12px;
+      font-family: 'Poppins', sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 6px;
+      backdrop-filter: blur(4px);
+      transition: background 0.2s;
+    }
+    .pf-banner-btn:hover { background: rgba(0,0,0,0.65); }
+
+    /* ===== AVATAR ===== */
+    .pf-avatar-wrap {
+      position: absolute;
+      left: 50%;
+      bottom: -52px;
+      transform: translateX(-50%);
+      cursor: pointer;
+      z-index: 3;
+    }
+    .pf-avatar-img {
+      width: 104px; height: 104px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: var(--bg3);
+      display: block;
+    }
+    .pf-avatar-initial {
+      width: 104px; height: 104px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #C87740, #8e44ad);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 44px; font-weight: 700;
+      color: #fff; font-family: 'Poppins', sans-serif;
+    }
+    .pf-cam-btn {
+      position: absolute;
+      bottom: 2px; right: 2px;
+      width: 32px; height: 32px;
+      background: var(--bg2);
+      border: 2px solid var(--bg);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; color: var(--text);
+      cursor: pointer; transition: all 0.2s;
+    }
+    .pf-cam-btn:hover { background: var(--accent); color: #fff; }
+
+    /* ===== ACTION BUTTONS ROW ===== */
+    .pf-actions {
+      display: flex;
+      gap: 10px;
+      padding: 0 20px;
+      margin-top: 16px;
+      justify-content: center;
+    }
+    .pf-action-btn {
+      flex: 1;
+      max-width: 110px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 14px 8px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Poppins', sans-serif;
+    }
+    .pf-action-btn:hover, .pf-action-btn:active {
+      border-color: var(--accent);
+      background: rgba(200,119,64,0.05);
+      transform: translateY(-1px);
+    }
+    .pf-action-btn i { font-size: 20px; color: var(--accent); }
+    .pf-action-btn span { font-size: 11px; font-weight: 600; color: var(--text2); }
+    .pf-action-logout i { color: #e50914; }
+    .pf-action-logout:hover { border-color: #e50914; }
+
+    /* ===== INFO CARD ===== */
+    .pf-info-card {
+      margin: 14px 16px 0;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .pf-info-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .pf-info-row:last-child { border-bottom: none; }
+    .pf-info-icon {
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .pf-info-label { font-size: 11px; color: var(--text2); margin-bottom: 2px; font-weight: 500; }
+    .pf-info-value {
+      font-size: 14px; color: var(--text);
+      font-weight: 600; line-height: 1.3;
+      word-break: break-all;
+    }
+    .pf-info-value.bio {
+      font-weight: 400; color: var(--text2);
+      font-size: 13px; line-height: 1.6;
+    }
+
+    /* ===== STATS ===== */
+    .pf-stats {
+      display: grid;
+      grid-template-columns: repeat(3,1fr);
+      gap: 10px;
+      padding: 0 16px;
+      margin-top: 14px;
+    }
+    .pf-stat {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 8px;
+      text-align: center;
+    }
+    .pf-stat-num {
+      font-size: 22px; font-weight: 700;
+      color: var(--accent); line-height: 1; margin-bottom: 5px;
+    }
+    .pf-stat-label { font-size: 11px; color: var(--text2); }
+
+    /* ===== EDIT FORM ===== */
+    .pf-edit-card {
+      margin: 14px 16px 0;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .pf-edit-header {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center;
+      justify-content: space-between;
+    }
+    .pf-edit-header h3 {
+      font-size: 14px; font-weight: 700;
+      color: var(--text); margin: 0;
+    }
+    .pf-edit-body { padding: 16px; }
+    .username-check { font-size:11px; margin-top:4px; display:none; }
+    .username-check.ok      { color:#27ae60; display:block; }
+    .username-check.error   { color:#e50914; display:block; }
+    .username-check.checking{ color:var(--text2); display:block; }
+    .pf-success { background:rgba(39,174,96,0.1); border:1px solid #27ae60;
+      color:#27ae60; padding:10px 14px; border-radius:8px;
+      font-size:13px; margin-bottom:14px; display:none; }
+    .pf-error { background:rgba(229,9,20,0.1); border:1px solid #e50914;
+      color:#e50914; padding:10px 14px; border-radius:8px;
+      font-size:13px; margin-bottom:14px; display:none; }
+
+    /* ===== WATCHLIST ===== */
+    .pf-section-title {
+      font-size: 15px; font-weight: 700;
+      color: var(--text); padding: 0 16px;
+      margin: 20px 0 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    /* ===== SHEET (avatar + banner) ===== */
+    .pf-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.65);
+      z-index: 400;
+      display: flex; align-items: flex-end;
+      justify-content: center; padding: 16px;
+      backdrop-filter: blur(6px);
+    }
+    .pf-sheet {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px; padding: 20px;
+      width: 100%; max-width: 420px;
+    }
+    .pf-sheet-title {
+      font-size: 15px; font-weight: 700;
+      color: var(--text); text-align: center;
+      margin-bottom: 16px;
+    }
+    .pf-sheet-opt {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px; border-radius: 12px;
+      background: var(--bg3); border: 1px solid var(--border);
+      cursor: pointer; margin-bottom: 10px;
+      transition: border-color 0.2s;
+    }
+    .pf-sheet-opt:hover { border-color: var(--accent); }
+    .pf-sheet-opt-icon {
+      width: 44px; height: 44px; border-radius: 11px;
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 18px; flex-shrink: 0;
+    }
+    #galleryInput  { display: none; }
+    #bannerInput   { display: none; }
+  </style>
+</head>
+<body>
+
+  <input type="file" id="galleryInput" accept="image/*"
+    onchange="onGalleryPick(this)"/>
+  <input type="file" id="bannerInput" accept="image/*"
+    onchange="onBannerPick(this)"/>
+
+  <!-- AVATAR SHEET -->
+  <div class="pf-overlay hidden" id="avatarOverlay">
+    <div class="pf-sheet">
+      <div class="pf-sheet-title">Change Profile Photo</div>
+
+      <div id="pfPreviewWrap"
+        style="display:none;text-align:center;margin-bottom:14px">
+        <img id="pfPreviewImg"
+          style="width:90px;height:90px;border-radius:50%;
+            object-fit:cover;background:var(--bg3);
+            margin:0 auto 10px;display:block"
+          src="" alt=""/>
+        <p style="font-size:12px;color:var(--text2)">Preview</p>
+      </div>
+
+      <div id="pfUploading"
+        style="display:none;text-align:center;padding:20px 0">
+        <i class="fas fa-circle-notch fa-spin"
+          style="font-size:28px;color:var(--accent);
+            margin-bottom:10px;display:block"></i>
+        <div style="font-size:13px;color:var(--text2)">Saving...</div>
+      </div>
+
+      <div id="pfSheetOpts">
+        <div class="pf-sheet-opt"
+          onclick="document.getElementById('galleryInput').click()">
+          <div class="pf-sheet-opt-icon">
+            <i class="fas fa-images"></i>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text)">
+              Choose from Gallery
+            </div>
+            <div style="font-size:12px;color:var(--text2)">
+              Pick a photo from your device
+            </div>
+          </div>
+          <i class="fas fa-chevron-right"
+            style="color:var(--text2);margin-left:auto;font-size:12px"></i>
+        </div>
+      </div>
+
+      <div id="pfActionRow"
+        style="display:none;gap:10px;margin-top:4px">
+        <button class="btn-outline"
+          onclick="cancelPick()" style="flex:1">Cancel</button>
+        <button class="btn-primary"
+          onclick="confirmAvatar()" style="flex:1">
+          <i class="fas fa-check"></i> Save
+        </button>
+      </div>
+
+      <div id="pfCloseRow" style="margin-top:4px">
+        <button class="btn-outline"
+          onclick="closeAvatarSheet()" style="width:100%">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BANNER SHEET -->
+  <div class="pf-overlay hidden" id="bannerOverlay">
+    <div class="pf-sheet">
+      <div class="pf-sheet-title">Change Banner Photo</div>
+
+      <div id="bnPreviewWrap"
+        style="display:none;text-align:center;margin-bottom:14px">
+        <img id="bnPreviewImg"
+          style="width:100%;height:100px;border-radius:12px;
+            object-fit:cover;background:var(--bg3);display:block"
+          src="" alt=""/>
+        <p style="font-size:12px;color:var(--text2);margin-top:8px">Preview</p>
+      </div>
+
+      <div id="bnUploading"
+        style="display:none;text-align:center;padding:20px 0">
+        <i class="fas fa-circle-notch fa-spin"
+          style="font-size:28px;color:var(--accent);
+            margin-bottom:10px;display:block"></i>
+        <div style="font-size:13px;color:var(--text2)">Saving banner...</div>
+      </div>
+
+      <div id="bnSheetOpts">
+        <div class="pf-sheet-opt"
+          onclick="document.getElementById('bannerInput').click()">
+          <div class="pf-sheet-opt-icon"
+            style="background:linear-gradient(135deg,#C87740,#8e44ad)">
+            <i class="fas fa-image"></i>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text)">
+              Choose Banner Image
+            </div>
+            <div style="font-size:12px;color:var(--text2)">
+              Wide landscape photo works best
+            </div>
+          </div>
+          <i class="fas fa-chevron-right"
+            style="color:var(--text2);margin-left:auto;font-size:12px"></i>
+        </div>
+
+        <div class="pf-sheet-opt" onclick="removeBanner()"
+          style="border-color:rgba(229,9,20,0.3)">
+          <div class="pf-sheet-opt-icon" style="background:#e50914">
+            <i class="fas fa-trash"></i>
+          </div>
+          <div>
+            <div style="font-size:14px;font-weight:600;color:var(--text)">
+              Remove Banner
+            </div>
+            <div style="font-size:12px;color:var(--text2)">
+              Go back to default gradient
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="bnActionRow"
+        style="display:none;gap:10px;margin-top:4px">
+        <button class="btn-outline"
+          onclick="cancelBannerPick()" style="flex:1">Cancel</button>
+        <button class="btn-primary"
+          onclick="confirmBanner()" style="flex:1">
+          <i class="fas fa-check"></i> Save Banner
+        </button>
+      </div>
+
+      <div id="bnCloseRow" style="margin-top:4px">
+        <button class="btn-outline"
+          onclick="closeBannerSheet()" style="width:100%">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <button class="icon-btn" onclick="history.back()">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <a href="index.html" class="logo">ANIME <span>VERSE</span></a>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn" id="themeBtn" onclick="toggleTheme()">
+        <i class="fas fa-moon"></i>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <div class="pf-page" id="pfPage">
+      <div style="display:flex;align-items:center;justify-content:center;
+        min-height:50vh">
+        <i class="fas fa-circle-notch fa-spin"
+          style="font-size:36px;color:var(--accent)"></i>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="data.js"></script>
+  <script>
+    function toggleTheme() {
+      const html=document.documentElement;
+      const btn=document.getElementById('themeBtn');
+      const dark=html.getAttribute('data-theme')==='dark';
+      html.setAttribute('data-theme',dark?'light':'dark');
+      btn.innerHTML=dark?'<i class="fas fa-sun"></i>':'<i class="fas fa-moon"></i>';
+      localStorage.setItem('av_theme',dark?'light':'dark');
+    }
+    function loadTheme() {
+      const saved=localStorage.getItem('av_theme')||'dark';
+      document.documentElement.setAttribute('data-theme',saved);
+      const btn=document.getElementById('themeBtn');
+      if(btn) btn.innerHTML=saved==='dark'
+        ?'<i class="fas fa-moon"></i>':'<i class="fas fa-sun"></i>';
+    }
+
+    let currentUserData={};
+    let pendingB64=null;
+    let pendingBannerB64=null;
+    let unameTimer=null;
+
+    async function ensureDoc(user) {
+      const ref=db.collection('users').doc(user.uid);
+      const doc=await ref.get();
+      if(!doc.exists){
+        await ref.set({
+          name:user.displayName||'User',
+          email:user.email,watchlist:[],
+          createdAt:firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+      return (await ref.get()).data();
+    }
+
+    function compressImg(file,maxW=300,quality=0.78){
+      return new Promise((res,rej)=>{
+        const reader=new FileReader();
+        reader.onload=e=>{
+          const img=new Image();
+          img.onload=()=>{
+            let w=img.width,h=img.height;
+            if(w>maxW){h=(h*maxW)/w;w=maxW;}
+            const c=document.createElement('canvas');
+            c.width=w;c.height=h;
+            c.getContext('2d').drawImage(img,0,0,w,h);
+            res(c.toDataURL('image/jpeg',quality));
+          };
+          img.onerror=rej;img.src=e.target.result;
+        };
+        reader.onerror=rej;reader.readAsDataURL(file);
+      });
+    }
+
+    function compressBanner(file){
+      return new Promise((res,rej)=>{
+        const reader=new FileReader();
+        reader.onload=e=>{
+          const img=new Image();
+          img.onload=()=>{
+            let w=img.width,h=img.height;
+            const maxW=900;
+            if(w>maxW){h=(h*maxW)/w;w=maxW;}
+            const c=document.createElement('canvas');
+            c.width=w;c.height=h;
+            c.getContext('2d').drawImage(img,0,0,w,h);
+            res(c.toDataURL('image/jpeg',0.75));
+          };
+          img.onerror=rej;img.src=e.target.result;
+        };
+        reader.onerror=rej;reader.readAsDataURL(file);
+      });
+    }
+
+    // ===== AVATAR SHEET =====
+    function openAvatarSheet(){
+      pendingB64=null;
+      document.getElementById('avatarOverlay').classList.remove('hidden');
+      document.getElementById('pfSheetOpts').style.display='block';
+      document.getElementById('pfPreviewWrap').style.display='none';
+      document.getElementById('pfActionRow').style.display='none';
+      document.getElementById('pfCloseRow').style.display='block';
+      document.getElementById('pfUploading').style.display='none';
+    }
+    function closeAvatarSheet(){
+      document.getElementById('avatarOverlay').classList.add('hidden');
+    }
+    function cancelPick(){
+      pendingB64=null;
+      document.getElementById('pfPreviewWrap').style.display='none';
+      document.getElementById('pfActionRow').style.display='none';
+      document.getElementById('pfSheetOpts').style.display='block';
+      document.getElementById('pfCloseRow').style.display='block';
+    }
+    async function onGalleryPick(input){
+      const file=input.files&&input.files[0];
+      if(!file) return; input.value='';
+      try{
+        const b64=await compressImg(file,300,0.78);
+        pendingB64=b64;
+        document.getElementById('pfPreviewImg').src=b64;
+        document.getElementById('pfPreviewWrap').style.display='block';
+        document.getElementById('pfSheetOpts').style.display='none';
+        document.getElementById('pfCloseRow').style.display='none';
+        const ar=document.getElementById('pfActionRow');
+        ar.style.display='flex';ar.style.flexDirection='row';
+      }catch(e){alert('Could not load image.');}
+    }
+    async function confirmAvatar(){
+      if(!pendingB64) return;
+      const user=auth.currentUser;
+      if(!user) return;
+      ['pfPreviewWrap','pfActionRow','pfSheetOpts','pfCloseRow']
+        .forEach(id=>document.getElementById(id).style.display='none');
+      document.getElementById('pfUploading').style.display='block';
+      try{
+        await db.collection('users').doc(user.uid).set(
+          {photoURL:pendingB64,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},
+          {merge:true}
+        );
+        closeAvatarSheet();
+        loadProfile(user);
+      }catch(e){alert('Error: '+e.message);closeAvatarSheet();}
+    }
+
+    // ===== BANNER SHEET =====
+    function openBannerSheet(){
+      pendingBannerB64=null;
+      document.getElementById('bannerOverlay').classList.remove('hidden');
+      document.getElementById('bnSheetOpts').style.display='block';
+      document.getElementById('bnPreviewWrap').style.display='none';
+      document.getElementById('bnActionRow').style.display='none';
+      document.getElementById('bnCloseRow').style.display='block';
+      document.getElementById('bnUploading').style.display='none';
+    }
+    function closeBannerSheet(){
+      document.getElementById('bannerOverlay').classList.add('hidden');
+    }
+    function cancelBannerPick(){
+      pendingBannerB64=null;
+      document.getElementById('bnPreviewWrap').style.display='none';
+      document.getElementById('bnActionRow').style.display='none';
+      document.getElementById('bnSheetOpts').style.display='block';
+      document.getElementById('bnCloseRow').style.display='block';
+    }
+    async function onBannerPick(input){
+      const file=input.files&&input.files[0];
+      if(!file) return; input.value='';
+      try{
+        const b64=await compressBanner(file);
+        pendingBannerB64=b64;
+        document.getElementById('bnPreviewImg').src=b64;
+        document.getElementById('bnPreviewWrap').style.display='block';
+        document.getElementById('bnSheetOpts').style.display='none';
+        document.getElementById('bnCloseRow').style.display='none';
+        const ar=document.getElementById('bnActionRow');
+        ar.style.display='flex';ar.style.flexDirection='row';
+      }catch(e){alert('Could not load image.');}
+    }
+    async function confirmBanner(){
+      if(!pendingBannerB64) return;
+      const user=auth.currentUser;
+      if(!user) return;
+      ['bnPreviewWrap','bnActionRow','bnSheetOpts','bnCloseRow']
+        .forEach(id=>document.getElementById(id).style.display='none');
+      document.getElementById('bnUploading').style.display='block';
+      try{
+        await db.collection('users').doc(user.uid).set(
+          {bannerURL:pendingBannerB64,
+           updatedAt:firebase.firestore.FieldValue.serverTimestamp()},
+          {merge:true}
+        );
+        closeBannerSheet();
+        loadProfile(user);
+      }catch(e){alert('Error: '+e.message);closeBannerSheet();}
+    }
+    async function removeBanner(){
+      const user=auth.currentUser;
+      if(!user) return;
+      if(!confirm('Remove banner photo?')) return;
+      try{
+        await db.collection('users').doc(user.uid).set(
+          {bannerURL:'',
+           updatedAt:firebase.firestore.FieldValue.serverTimestamp()},
+          {merge:true}
+        );
+        closeBannerSheet();
+        loadProfile(user);
+      }catch(e){alert('Error: '+e.message);}
+    }
+
+    // ===== USERNAME =====
+    async function checkUname(val,uid){
+      const el=document.getElementById('usernameCheck');
+      if(!val){el.className='username-check';return false;}
+      if(val.length<3){el.className='username-check error';
+        el.textContent='Min 3 characters';return false;}
+      if(!/^[a-z0-9_\.]+$/.test(val)){el.className='username-check error';
+        el.textContent='Only a-z, 0-9, _ and .';return false;}
+      el.className='username-check checking';el.textContent='Checking...';
+      try{
+        const snap=await db.collection('users').where('username','==',val).get();
+        const taken=snap.docs.some(d=>d.id!==uid);
+        if(taken){el.className='username-check error';
+          el.textContent=`@${val} is taken`;return false;}
+        el.className='username-check ok';
+        el.textContent=`@${val} is available!`;return true;
+      }catch(e){el.className='username-check ok';
+        el.textContent='Looks good!';return true;}
+    }
+    function onUnameInput(val,uid){
+      clearTimeout(unameTimer);
+      val=val.toLowerCase().replace(/\s/g,'');
+      document.getElementById('usernameInput').value=val;
+      const el=document.getElementById('usernameCheck');
+      if(!val){el.className='username-check';return;}
+      el.className='username-check checking';el.textContent='Checking...';
+      unameTimer=setTimeout(()=>checkUname(val,uid),700);
+    }
+
+    // ===== SAVE PROFILE =====
+    async function saveProfile(uid){
+      const name=document.getElementById('pfNameInput').value.trim();
+      const uname=document.getElementById('usernameInput').value.trim().toLowerCase();
+      const bio=document.getElementById('pfBioInput').value.trim();
+      if(!name){alert('Name required!');return;}
+      const btn=document.getElementById('saveProfileBtn');
+      btn.innerHTML='<i class="fas fa-circle-notch fa-spin"></i> Saving...';
+      btn.disabled=true;
+      try{
+        if(uname&&uname!==currentUserData.username){
+          const ok=await checkUname(uname,uid);
+          if(!ok){btn.innerHTML='<i class="fas fa-floppy-disk"></i> Save';
+            btn.disabled=false;return;}
+        }
+        await auth.currentUser.updateProfile({displayName:name});
+        const upd={name,bio,email:auth.currentUser.email,
+          updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+        if(uname) upd.username=uname;
+        await db.collection('users').doc(uid).set(upd,{merge:true});
+        document.getElementById('pfSuccess').style.display='block';
+        setTimeout(()=>document.getElementById('pfSuccess').style.display='none',3000);
+        loadProfile(auth.currentUser);
+      }catch(e){
+        document.getElementById('pfError').textContent='Error: '+e.message;
+        document.getElementById('pfError').style.display='block';
+        setTimeout(()=>document.getElementById('pfError').style.display='none',5000);
+      }finally{
+        btn.innerHTML='<i class="fas fa-floppy-disk"></i> Save';
+        btn.disabled=false;
+      }
+    }
+
+    // ===== LOAD PROFILE =====
+    async function loadProfile(user){
+      let userData={};
+      try{userData=await ensureDoc(user);}catch(e){}
+      currentUserData={...userData,
+        displayName:user.displayName||userData.name||'User',
+        email:user.email,
+        photoURL:userData.photoURL||'',
+        bannerURL:userData.bannerURL||''
+      };
+      const name=currentUserData.displayName;
+      const uname=currentUserData.username||'';
+      const bio=currentUserData.bio||'';
+      const avatar=currentUserData.photoURL||'';
+      const banner=currentUserData.bannerURL||'';
+      const watchlist=userData.watchlist||[];
+      const initial=name.charAt(0).toUpperCase();
+
+      document.getElementById('pfPage').innerHTML=`
+        <!-- HERO -->
+        <div class="pf-hero" style="${banner
+          ? ''
+          : 'background:linear-gradient(135deg,#C87740 0%,#8e44ad 50%,#2ca5e0 100%)'}">
+          ${banner
+            ? `<img class="pf-hero-img" src="${banner}" alt="banner"
+                onerror="this.style.display='none'">`
+            : ''}
+
+          <!-- Banner edit button -->
+          <button class="pf-banner-btn" onclick="openBannerSheet()">
+            <i class="fas fa-camera"></i>
+            ${banner ? 'Change Banner' : 'Add Banner'}
+          </button>
+
+          <!-- Avatar -->
+          <div class="pf-avatar-wrap" onclick="openAvatarSheet()">
+            ${avatar
+              ?`<img class="pf-avatar-img" src="${avatar}" alt="${name}"
+                  onerror="this.style.display='none';
+                    document.getElementById('pfFb').style.display='flex'"/>
+                <div class="pf-avatar-initial"
+                  id="pfFb" style="display:none">${initial}</div>`
+              :`<div class="pf-avatar-initial">${initial}</div>`}
+            <div class="pf-cam-btn">
+              <i class="fas fa-camera" style="font-size:12px"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- NAME + USERNAME -->
+        <div style="padding-top:62px;text-align:center;padding-bottom:4px">
+          <div style="font-size:22px;font-weight:700;color:var(--text);
+            margin-bottom:2px">${name}</div>
+          ${uname
+            ?`<div style="font-size:14px;color:var(--accent);
+                font-weight:600">@${uname}</div>`
+            :`<div style="font-size:12px;color:var(--text2)">No username set</div>`}
+        </div>
+
+        <!-- ACTION BUTTONS -->
+        <div class="pf-actions">
+          <div class="pf-action-btn" onclick="openAvatarSheet()">
+            <i class="fas fa-camera"></i>
+            <span>Set Photo</span>
+          </div>
+          <div class="pf-action-btn" onclick="openBannerSheet()">
+            <i class="fas fa-image"></i>
+            <span>Banner</span>
+          </div>
+          <div class="pf-action-btn" onclick="toggleEdit()">
+            <i class="fas fa-pen"></i>
+            <span>Edit Info</span>
+          </div>
+          <div class="pf-action-btn pf-action-logout" onclick="doLogout()">
+            <i class="fas fa-right-from-bracket"></i>
+            <span>Logout</span>
+          </div>
+        </div>
+
+        <!-- INFO CARD -->
+        <div class="pf-info-card">
+          ${bio?`
+          <div class="pf-info-row">
+            <div class="pf-info-icon"
+              style="background:rgba(200,119,64,0.12)">
+              <i class="fas fa-align-left"
+                style="color:var(--accent)"></i>
+            </div>
+            <div style="flex:1">
+              <div class="pf-info-label">Bio</div>
+              <div class="pf-info-value bio">${bio}</div>
+            </div>
+          </div>`:``}
+          <div class="pf-info-row">
+            <div class="pf-info-icon"
+              style="background:rgba(44,165,224,0.12)">
+              <i class="fas fa-envelope" style="color:#2ca5e0"></i>
+            </div>
+            <div style="flex:1">
+              <div class="pf-info-label">Email</div>
+              <div class="pf-info-value">
+                ${user.email}
+                ${user.emailVerified
+                  ?`<span style="color:#27ae60;font-size:11px;margin-left:6px">
+                      <i class="fas fa-circle-check"></i> Verified</span>`
+                  :``}
+              </div>
+            </div>
+          </div>
+          <div class="pf-info-row">
+            <div class="pf-info-icon"
+              style="background:rgba(39,174,96,0.12)">
+              <i class="fas fa-calendar" style="color:#27ae60"></i>
+            </div>
+            <div style="flex:1">
+              <div class="pf-info-label">Joined</div>
+              <div class="pf-info-value">
+                ${new Date(user.metadata.creationTime||Date.now())
+                  .toLocaleDateString('en-US',{
+                    day:'numeric',month:'long',year:'numeric'
+                  })}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STATS -->
+        <div class="pf-stats">
+          <div class="pf-stat">
+            <div class="pf-stat-num">${watchlist.length}</div>
+            <div class="pf-stat-label">Watchlist</div>
+          </div>
+          <div class="pf-stat">
+            <div class="pf-stat-num" style="font-size:20px">
+              ${user.emailVerified
+                ?`<i class="fas fa-shield-halved" style="color:#27ae60"></i>`
+                :`<i class="fas fa-clock" style="color:#f39c12"></i>`}
+            </div>
+            <div class="pf-stat-label">
+              ${user.emailVerified?'Verified':'Pending'}
+            </div>
+          </div>
+          <div class="pf-stat">
+            <div class="pf-stat-num"
+              style="font-size:13px;font-weight:700">
+              ${new Date(user.metadata.creationTime||Date.now())
+                .toLocaleDateString('en-US',{month:'short',year:'numeric'})}
+            </div>
+            <div class="pf-stat-label">Since</div>
+          </div>
+        </div>
+
+        <!-- EDIT FORM (hidden) -->
+        <div class="pf-edit-card hidden" id="editCard">
+          <div class="pf-edit-header">
+            <h3>
+              <i class="fas fa-pen"
+                style="color:var(--accent);margin-right:6px"></i>
+              Edit Info
+            </h3>
+            <button onclick="toggleEdit()"
+              style="background:none;border:none;color:var(--text2);
+                cursor:pointer;font-size:16px">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="pf-edit-body">
+            <div id="pfSuccess" class="pf-success">✅ Saved!</div>
+            <div id="pfError" class="pf-error"></div>
+            <div class="form-group">
+              <label>DISPLAY NAME *</label>
+              <input type="text" id="pfNameInput"
+                value="${name}" placeholder="Your name"/>
+            </div>
+            <div class="form-group">
+              <label>USERNAME</label>
+              <div style="position:relative">
+                <span style="position:absolute;left:12px;top:50%;
+                  transform:translateY(-50%);color:var(--text2)">@</span>
+                <input type="text" id="usernameInput"
+                  value="${uname}" placeholder="yourname"
+                  style="padding-left:28px"
+                  oninput="onUnameInput(this.value,'${user.uid}')"/>
+              </div>
+              <div id="usernameCheck" class="username-check"></div>
+            </div>
+            <div class="form-group">
+              <label>BIO</label>
+              <textarea id="pfBioInput"
+                placeholder="Something about yourself..."
+                style="min-height:80px">${bio}</textarea>
+            </div>
+            <button class="btn-primary" id="saveProfileBtn"
+              onclick="saveProfile('${user.uid}')" style="width:100%">
+              <i class="fas fa-floppy-disk"></i> Save
+            </button>
+          </div>
+        </div>
+
+        <!-- WATCHLIST -->
+        <div class="pf-section-title">
+          <i class="fas fa-bookmark" style="color:var(--accent)"></i>
+          My Watchlist
+          <span style="font-size:12px;color:var(--text2);
+            font-weight:400;margin-left:auto">
+            ${watchlist.length} saved
+          </span>
+        </div>
+        <div id="pfWatchlist" class="grid" style="padding:0 16px">
+          <div style="grid-column:1/-1;text-align:center;
+            padding:20px;color:var(--text2)">
+            <i class="fas fa-circle-notch fa-spin"></i>
+          </div>
+        </div>
+      `;
+
+      loadWatchlist(watchlist);
+    }
+
+    function toggleEdit(){
+      const card=document.getElementById('editCard');
+      if(card.classList.contains('hidden'))
+        card.classList.remove('hidden');
+      else card.classList.add('hidden');
+    }
+
+    async function doLogout(){
+      if(!confirm('Log out?')) return;
+      await auth.signOut();
+      window.location.href='index.html';
+    }
+
+    async function loadWatchlist(watchlist){
+      const grid=document.getElementById('pfWatchlist');
+      if(!grid) return;
+      if(!watchlist||!watchlist.length){
+        grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;
+          padding:40px;color:var(--text2)">
+          <i class="fas fa-bookmark"
+            style="font-size:36px;opacity:0.3;
+              margin-bottom:14px;display:block"></i>
+          Nothing saved yet.
+        </div>`;
+        return;
+      }
+      try{
+        const list=[];
+        const foundIds=[];
+        for(let i=0;i<watchlist.length;i+=10){
+          const batch=watchlist.slice(i,i+10);
+          const snap=await db.collection('anime')
+            .where(firebase.firestore.FieldPath.documentId(),'in',batch).get();
+          snap.forEach(doc=>{
+            list.push({...doc.data(),firestoreId:doc.id});
+            foundIds.push(doc.id);
+          });
+        }
+
+        // ✅ Clean up deleted anime from watchlist
+        const deletedIds=watchlist.filter(id=>!foundIds.includes(id));
+        if(deletedIds.length>0){
+          const user=auth.currentUser;
+          if(user){
+            const cleanedList=watchlist.filter(id=>!deletedIds.includes(id));
+            db.collection('users').doc(user.uid).set({watchlist:cleanedList},{merge:true}).catch(()=>{});
+            // Update count display
+            const statNum=document.querySelector('.pf-stat-num');
+            if(statNum&&statNum.parentElement?.querySelector('.pf-stat-label')?.textContent==='Watchlist'){
+              statNum.textContent=cleanedList.length;
+            }
+            const savedLabel=document.querySelector('[style*="saved"]');
+            if(savedLabel) savedLabel.textContent=`${cleanedList.length} saved`;
+          }
+        }
+
+        if(!list.length){
+          grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;
+            padding:40px;color:var(--text2)">
+            <i class="fas fa-bookmark"
+              style="font-size:36px;opacity:0.3;
+                margin-bottom:14px;display:block"></i>
+            Nothing saved yet.
+          </div>`;
+          return;
+        }
+
+        grid.innerHTML='';
+        list.forEach(anime=>{
+          const card=document.createElement('div');
+          card.className='card';card.style.cursor='pointer';
+          card.innerHTML=`
+            <div><img class="card-thumb"
+              src="${anime.thumbnail||''}" alt="${anime.title}"
+              onerror="this.style.background='var(--bg3)'"/></div>
+            <div class="card-info">
+              <span class="card-badge">
+                ${(anime.type||'ANIME').toUpperCase()}</span>
+              <div class="card-title">${anime.title}</div>
+              <div class="card-meta">
+                <span class="card-rating">
+                  <i class="fas fa-star"></i> ${anime.rating||'N/A'}</span>
+                <span class="card-year">${anime.year||''}</span>
+              </div>
+            </div>`;
+          card.addEventListener('click',()=>{
+            window.location.href=`anime.html?id=${anime.firestoreId}`;
+          });
+          grid.appendChild(card);
+        });
+      }catch(e){
+        grid.innerHTML=`<div style="grid-column:1/-1;text-align:center;
+          padding:20px;color:var(--text2)">Could not load.</div>`;
+      }
+    }
+
+    function showLoginPage(){
+      document.getElementById('pfPage').innerHTML=`
+        <div style="text-align:center;padding:80px 20px">
+          <i class="fas fa-user-circle"
+            style="font-size:72px;color:var(--accent);
+              opacity:0.4;margin-bottom:24px;display:block"></i>
+          <h2 style="font-size:24px;font-weight:700;
+            color:var(--text);margin-bottom:10px">Not Logged In</h2>
+          <p style="color:var(--text2);margin-bottom:24px">
+            Please login to view your profile.
+          </p>
+          <button class="btn-primary"
+            onclick="window.location.href='index.html'"
+            style="margin:0 auto;max-width:200px;
+              display:flex;align-items:center;gap:8px">
+            <i class="fas fa-right-to-bracket"></i> Go to Login
+          </button>
+        </div>`;
+    }
+
+    loadTheme();
+    auth.onAuthStateChanged(user=>{
+      if(user) loadProfile(user);
+      else showLoginPage();
+    });
+    document.getElementById('avatarOverlay').addEventListener('click',function(e){
+      if(e.target===this) closeAvatarSheet();
+    });
+    document.getElementById('bannerOverlay').addEventListener('click',function(e){
+      if(e.target===this) closeBannerSheet();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Terms of Service — Anime Verse</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    /* ── Page base ── */
+    body { min-height: 100vh; background: var(--bg); color: var(--text); }
+
+    /* ── Animations ── */
+    @keyframes tFadeUp {
+      from { opacity:0; transform:translateY(28px) scale(0.97); }
+      to   { opacity:1; transform:translateY(0)    scale(1);    }
+    }
+    @keyframes tFadeIn {
+      from { opacity:0; }
+      to   { opacity:1; }
+    }
+    @keyframes tScaleIn {
+      from { opacity:0; transform:scale(0.88); }
+      to   { opacity:1; transform:scale(1);    }
+    }
+
+    /* ── Header ── */
+    .t-header {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 13px 16px;
+      background: var(--header-bg); backdrop-filter: blur(12px);
+      border-bottom: 1.5px solid var(--border);
+      box-shadow: 0 2px 12px var(--shadow);
+      animation: tFadeIn 0.3s ease both;
+    }
+    .t-logo { font-family:'Bebas Neue',cursive; font-size:22px; letter-spacing:2px; color:var(--text); text-decoration:none; }
+    .t-logo span { color:var(--accent); }
+    .t-back {
+      display:flex; align-items:center; gap:7px;
+      padding:9px 16px; border-radius:8px;
+      background:var(--bg3); border:1.5px solid var(--border);
+      color:var(--text2); font-family:'Poppins',sans-serif;
+      font-size:13px; font-weight:800; text-decoration:none;
+      transition:all 0.15s;
+      box-shadow:0 3px 0 var(--btn-3d,rgba(0,0,0,0.2));
+    }
+    .t-back:hover { border-color:var(--accent); color:var(--accent); transform:translateY(-1px); }
+    .t-back:active { transform:translateY(2px); box-shadow:0 1px 0 var(--btn-3d,rgba(0,0,0,0.2)); }
+
+    /* ── Hero ── */
+    .t-hero {
+      padding: 40px 20px 32px;
+      text-align: center;
+      background: linear-gradient(160deg, var(--bg2) 0%, var(--bg) 100%);
+      border-bottom: 1.5px solid var(--border);
+      animation: tFadeUp 0.5s cubic-bezier(0.22,1,0.36,1) 0.05s both;
+    }
+    .t-hero-icon {
+      width:72px; height:72px; border-radius:20px;
+      background:linear-gradient(135deg,var(--accent),#5D4FBF);
+      display:flex; align-items:center; justify-content:center;
+      font-size:32px; color:#fff; margin:0 auto 18px;
+      box-shadow:0 8px 24px rgba(151,135,243,0.35);
+      animation:tScaleIn 0.45s cubic-bezier(0.34,1.56,0.64,1) 0.15s both;
+    }
+    :root[data-theme="light"] .t-hero-icon {
+      background:linear-gradient(135deg,#194342,#2E6B5E);
+      box-shadow:0 8px 24px rgba(25,67,66,0.3);
+    }
+    .t-hero h1 {
+      font-family:'Poppins',sans-serif; font-size:26px; font-weight:900;
+      color:var(--text); margin-bottom:10px; line-height:1.2;
+    }
+    .t-hero p {
+      font-size:14px; color:var(--text2); font-weight:500;
+      max-width:320px; margin:0 auto 16px; line-height:1.65;
+    }
+    .t-hero-badge {
+      display:inline-flex; align-items:center; gap:7px;
+      background:var(--bg3); border:1.5px solid var(--border);
+      padding:7px 16px; border-radius:20px;
+      font-size:12px; color:var(--text2); font-weight:700;
+    }
+    .t-hero-badge i { color:var(--accent); }
+
+    /* ── Summary cards ── */
+    .t-summary {
+      display:grid; grid-template-columns:repeat(3,1fr);
+      gap:10px; padding:20px 16px 4px;
+    }
+    .t-sum-card {
+      background:var(--card-bg); border:1.5px solid var(--border);
+      border-radius:12px; padding:14px 10px; text-align:center;
+      box-shadow:0 3px 0 var(--btn-3d,rgba(0,0,0,0.18));
+      animation:tFadeUp 0.42s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .t-sum-card:nth-child(1) { animation-delay:0.10s; }
+    .t-sum-card:nth-child(2) { animation-delay:0.16s; }
+    .t-sum-card:nth-child(3) { animation-delay:0.22s; }
+    .t-sum-icon {
+      width:40px; height:40px; border-radius:10px;
+      display:flex; align-items:center; justify-content:center;
+      font-size:17px; margin:0 auto 8px;
+    }
+    .t-sum-card p { font-size:10px; color:var(--text2); font-weight:700; line-height:1.4; }
+
+    /* ── Content sections ── */
+    .t-content { padding:14px 16px 32px; max-width:640px; margin:0 auto; }
+
+    .t-section {
+      background:var(--card-bg); border:1.5px solid var(--border);
+      border-radius:16px; padding:18px; margin-bottom:14px;
+      box-shadow:0 4px 0 var(--btn-3d,rgba(0,0,0,0.15)), 0 6px 20px rgba(0,0,0,0.12);
+      animation:tFadeUp 0.42s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .t-section:nth-child(1)  { animation-delay:0.08s; }
+    .t-section:nth-child(2)  { animation-delay:0.13s; }
+    .t-section:nth-child(3)  { animation-delay:0.18s; }
+    .t-section:nth-child(4)  { animation-delay:0.23s; }
+    .t-section:nth-child(5)  { animation-delay:0.27s; }
+    .t-section:nth-child(6)  { animation-delay:0.31s; }
+    .t-section:nth-child(7)  { animation-delay:0.34s; }
+    .t-section:nth-child(8)  { animation-delay:0.37s; }
+    .t-section:nth-child(9)  { animation-delay:0.39s; }
+    .t-section:nth-child(10) { animation-delay:0.41s; }
+
+    .t-sec-header { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+    .t-sec-icon {
+      width:40px; height:40px; border-radius:10px; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center; font-size:17px;
+    }
+    .t-sec-title { font-size:17px; font-weight:900; color:var(--text); line-height:1.2; }
+
+    .t-sec-body { font-size:13px; color:var(--text2); line-height:1.75; font-weight:500; }
+    .t-sec-body p { margin-bottom:10px; }
+    .t-sec-body p:last-child { margin-bottom:0; }
+    .t-sec-body strong { color:var(--text); font-weight:800; }
+
+    .t-notice {
+      background:rgba(255,180,0,0.07); border:1.5px solid rgba(255,180,0,0.28);
+      border-radius:10px; padding:13px; margin-bottom:14px;
+      display:flex; gap:10px; align-items:flex-start;
+      font-size:13px; color:var(--text2); line-height:1.7; font-weight:500;
+    }
+    .t-notice i { color:#ffb400; font-size:16px; flex-shrink:0; margin-top:2px; }
+
+    .t-info-box {
+      background:rgba(151,135,243,0.07); border:1.5px solid rgba(151,135,243,0.22);
+      border-radius:10px; padding:12px 14px; margin-top:12px;
+      font-size:13px; color:var(--text2); line-height:1.7;
+      display:flex; gap:10px; font-weight:500;
+    }
+    :root[data-theme="light"] .t-info-box {
+      background:rgba(25,67,66,0.07);
+      border-color:rgba(25,67,66,0.2);
+    }
+    .t-info-box i { color:var(--accent); flex-shrink:0; margin-top:2px; }
+
+    .t-green-box {
+      background:rgba(39,174,96,0.08); border:1.5px solid rgba(39,174,96,0.25);
+      border-radius:10px; padding:12px 14px; margin-top:12px;
+      font-size:13px; color:var(--text2); line-height:1.7;
+      display:flex; gap:10px; font-weight:500;
+    }
+    .t-green-box i { color:#27ae60; flex-shrink:0; margin-top:2px; font-size:16px; }
+
+    .t-list { list-style:none; padding:0; margin:10px 0 0; display:flex; flex-direction:column; gap:8px; }
+    .t-list li {
+      background:var(--bg3); border:1px solid var(--border);
+      border-radius:8px; padding:10px 14px;
+      font-size:13px; color:var(--text2); line-height:1.6;
+      display:flex; gap:10px; align-items:flex-start; font-weight:500;
+    }
+    .t-list li i { color:var(--accent); flex-shrink:0; margin-top:3px; font-size:12px; }
+
+    .t-divider {
+      text-align:center; padding:10px 0 6px; font-size:10px;
+      font-weight:800; color:var(--text2); letter-spacing:2px;
+      opacity:0.5;
+    }
+
+    /* ── CTA ── */
+    .t-cta {
+      background:linear-gradient(135deg,rgba(151,135,243,0.12),rgba(93,79,191,0.08));
+      border:1.5px solid rgba(151,135,243,0.3);
+      border-radius:16px; padding:22px; margin-bottom:14px;
+      text-align:center;
+      animation:tFadeUp 0.42s cubic-bezier(0.22,1,0.36,1) 0.42s both;
+    }
+    :root[data-theme="light"] .t-cta {
+      background:linear-gradient(135deg,rgba(25,67,66,0.08),rgba(46,107,94,0.05));
+      border-color:rgba(25,67,66,0.2);
+    }
+    .t-cta i { font-size:22px; color:var(--accent); display:block; margin-bottom:10px; }
+    .t-cta h3 { font-size:16px; font-weight:900; color:var(--text); margin-bottom:8px; }
+    .t-cta p  { font-size:13px; color:var(--text2); margin-bottom:16px; line-height:1.6; font-weight:500; }
+    .t-cta-btn {
+      display:inline-flex; align-items:center; gap:8px;
+      background:var(--accent); color:#fff; border:none;
+      border-radius:10px; padding:12px 24px;
+      font-family:'Poppins',sans-serif; font-size:14px; font-weight:800;
+      cursor:pointer; text-decoration:none; transition:all 0.15s;
+      box-shadow:0 4px 0 var(--btn-shadow,rgba(100,80,200,0.4));
+    }
+    .t-cta-btn:hover { transform:translateY(-1px); box-shadow:0 5px 0 var(--btn-shadow,rgba(100,80,200,0.4)); }
+    .t-cta-btn:active { transform:translateY(3px); box-shadow:0 1px 0 var(--btn-shadow,rgba(100,80,200,0.4)); }
+
+    /* ── Footer ── */
+    .t-footer {
+      padding:16px; text-align:center; border-top:1.5px solid var(--border);
+      background:var(--bg2); font-size:12px; color:var(--text2); font-weight:600;
+    }
+    .t-footer a { color:var(--accent); text-decoration:none; font-weight:700; }
+
+    /* ── Reduced motion ── */
+    @media (prefers-reduced-motion: reduce) {
+      .t-hero, .t-hero-icon, .t-sum-card, .t-section, .t-cta {
+        animation: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="t-header">
+    <a href="index.html" class="t-logo">ANIME <span>VERSE</span></a>
+    <a href="index.html" class="t-back">
+      <i class="fas fa-arrow-left"></i> Back to Home
+    </a>
+  </header>
+
+  <!-- Hero -->
+  <div class="t-hero">
+    <div class="t-hero-icon"><i class="fas fa-file-contract"></i></div>
+    <h1>Terms of Service</h1>
+    <p>Please read these terms carefully before using Anime Verse. By accessing our website, you agree to the following.</p>
+    <div class="t-hero-badge">
+      <i class="fas fa-calendar-check"></i> Last updated: April 2026
+    </div>
+  </div>
+
+  <!-- Summary 3 cards -->
+  <div class="t-summary">
+    <div class="t-sum-card">
+      <div class="t-sum-icon" style="background:rgba(39,174,96,0.12)">
+        <i class="fas fa-database" style="color:#27ae60"></i>
+      </div>
+      <p>No Data<br/>Collection</p>
+    </div>
+    <div class="t-sum-card">
+      <div class="t-sum-icon" style="background:rgba(229,9,20,0.1)">
+        <i class="fas fa-server" style="color:#e50914"></i>
+      </div>
+      <p>No Hosted<br/>Content</p>
+    </div>
+    <div class="t-sum-card">
+      <div class="t-sum-icon" style="background:rgba(151,135,243,0.12)">
+        <i class="fas fa-hand-pointer" style="color:var(--accent)"></i>
+      </div>
+      <p>Use<br/>As-Is</p>
+    </div>
+  </div>
+
+  <!-- Notice banner -->
+  <div style="padding:14px 16px 0;max-width:640px;margin:0 auto">
+    <div class="t-notice" style="animation:tFadeUp 0.4s cubic-bezier(0.22,1,0.36,1) 0.28s both">
+      <i class="fas fa-rotate"></i>
+      <div>
+        <strong style="color:#ffb400">Notice:</strong>
+        Anime Verse reserves the right to update, modify, or replace these Terms at any time without prior notice.
+        Changes take effect immediately upon being posted. Your continued use of the website after any changes
+        constitutes your acceptance of the revised terms.
+      </div>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="t-content">
+
+    <!-- 1. Acceptance -->
+    <div class="t-section">
+      <div class="t-sec-header">
+        <div class="t-sec-icon" style="background:rgba(151,135,243,0.12)">
+          <i class="fas fa-check-double" style="color:var(--accent)"></i>
+        </div>
+        <div class="t-sec-title">Acceptance of Terms</div>
+      </div>
+      <div class="t-sec-body">
+        <p>By accessing, browsing, or using Anime Verse in any way, you acknowledge that you have read, understood,
+          and agree to be bound by these Terms of Service. If you do not agree with any part of these terms,
+          you must discontinue use of the website immediately.</p>
+        <p>These terms apply to all visitors, users, and anyone who accesses the website regardless of location or device.</p>
+      </div>
+    </div>
+
+    <!-- 2. About the Service -->
+    <div class="t-section">
+      <div class="t-sec-header">
+        <div class="t-sec-icon" style="background:rgba(44,165,224,0.12)">
+          <i class="fas fa-globe" style="color:#2ca5e0"></i>
+        </div>
+        <div class="t-sec-title">About the Service</div>
+      </div>
+      <div class="t-sec-body">
+        <p>Anime Verse is an anime streaming index and community platform that aggregates publicly available
+          information from across the internet, including titles, descriptions, posters, ratings, and related metadata.</p>
+        <p>We do not upload, host, store, or own any video files, copyrighted media, or streaming content on our servers.
+          All external links, if present, lead to content hosted by independent third-party websites over which we have no control.</p>
+        <div class="t-info-box">
+          <i class="fas fa-circle-info"></i>
+          <span>Anime Verse is purely an informational and indexing service. We act as an aggregator of publicly available
+          data and do not claim ownership of any third-party content displayed on this site.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. Privacy -->
+    <div class="t-section">
+      <div class="t-sec-header">
+        <div class="t-sec-icon" style="background:rgba(39,174,96,0.12)">
+          <i class="fas fa-user-shield" style="color:#27ae60"></i>
+        </div>
+        <div class="t-sec-title">Privacy & Data Collection</div>
+      </div>
+      <div class="t-sec-body">
+        <p>Anime Verse uses <strong>Firebase Authentication</strong> for optional account creation. If you create an account,
+          your email address is stored securely in Firebase. We do not sell, share, or misuse your personal data.</p>
+        <p>Your watchlist, comments, and reactions are stored in Firestore under your account. This data is used solely
+          to provide you with personalized features on this website.</p>
+        <div class="t-green-box">
+          <i class="fas fa-lock"></i>
+          <span>Account creation is optional. You can browse the entire website without registering. Your data is never
+          sold to third parties or used for advertising.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Use of Content -->
+    <div class="t-section">
+      <div class="t-sec-header">
+        <div class="t-sec-icon" style="background:rgba(41,128,185,0.12)">
+          <i class="fas fa-photo-film" style="color:#2980b9"></i>
+        </div>
+        <div class="t-sec-title">Use of Content</div>
+      </div>
+      <div class="t-sec-body">
+        <p>All content provided on Anime Verse is for informational and entertainment purposes only. We make no guarantees
+          regarding the accuracy, completeness, or reliability of any information displayed.</p>
+        <p>All trademarks, logos, anime posters, images, descriptions, and other media belong to their respective copyright owners.
+          Anime Verse does not claim any ownership over this content.</p>
+      </div>
+    </div>
+
+    <div class="t-divider">— YOUR RESPONSIBILITIES —</div>
+
+    <!-- 5. User Responsibilities -->
+    <div class="t-section">
+      <div class="t-sec-header">
+        <div class="t-sec-icon" style="background:rgba(230,126,34,0.12)">
+          <i class="fas fa-user-check" style="color:#e67e22"></i>
+        </div>
+        <div class="t-sec-title">User Responsibilities</div>
+      </div>
+      <div class="t-sec-body">
+        <p>By using Anime Verse, you agree to the following responsibilities:</p>
+        <ul class="t-list">
+          <li><i class="fas fa-chevron-right"></i> You will not use the website for any unlawful, illegal, or prohibited activities.</li>
+          <li><i class="fas fa-chevron-right"></i> You will not attempt to hack, disrupt, overload, or interfere with the operation of the website.</li>
+          <li><i class="fas fa-chevron-right"></i> You will not scrape, copy, reproduce, or redistribute the website's content without permission.</li>
+          <li><i class="fas fa-chevron-right"></i> You will not post defamatory, harassing, or harmful content in comments or interactive features.</li>
+          <li><i class="fas fa-chevron-right"></i> You acknowledge that you are using the website at your own discretion and risk.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- 6. Third-Party Links -->
+    <div class="t-section">
+      <div class="t-sec-header">
+        <div class="t-sec-icon" style="background:rgba(155,89,182,0.12)">
+          <i class="fas fa-arrow-up-right-from-square" style="color:#9b59b6"></i>
+        </div>
+        <div class="t-sec-title">Third-Party Links & Content</div>
+      </div>
+      <div class="t-sec-body">
+        <p>Anime Verse may contain links to external third-party websites including Telegram, YouTube, Streamtape, and others.
+          These links are provided for convenience and informational purposes only. We do not endorse, control, or take
+          responsibility for the content, privacy policies, or practices of any third-party websites.</p>
+        <p>Visiting any external link is entirely at your own risk. We strongly recommend reviewing the terms and privacy
+          policies of any third-party site you visit through our platform.</p>
+      </div>
+    </div>
+
+    <!-- 7. Limitation of Liability -->
+    <div class="t-section">
+      <div class="t-sec-header">
+        <div class="t-sec-icon" style="background:rgba(229,9,20,0.1)">
+          <i class="fas fa-triangle-exclamation" style="color:#e50914"></i>
+        </div>
+        <div class="t-sec-title">Limitation of Liability</div>
+      </div>
+      <div class="t-sec-body">
+        <p>Anime Verse and its operators are provided on an <strong>"as is"</strong> and <strong>"as available"</strong> basis
+          without warranties or representations of any kind, whether express or implied.</p>
+        <p>To the fullest extent permitted by applicable law, Anime Verse shall not be held liable for any direct, indirect,
+          incidental, consequential, or special damages arising out of or in connection with your use of the website,
+          including but not limited to loss of data, revenue, or any other damages.</p>
+        <p>We do not guarantee uninterrupted or error-free operation of the website and reserve the right to modify,
+          suspend, or discontinue the service at any time.</p>
+      </div>
+    </div>
+
+    <!-- 8. Intellectual Property -->
+    <div class="t-section">
+      <div class="t-sec-header">
+        <div class="t-sec-icon" style="background:rgba(241,196,15,0.12)">
+          <i class="fas fa-copyright" style="color:#f1c40f"></i>
+        </div>
+        <div class="t-sec-title">Intellectual Property</div>
+      </div>
+      <div class="t-sec-body">
+        <p>The design, layout, code, and original branding of Anime Verse are the property of its operators.
+          All other content, including anime data, images, and descriptions, belong to their respective copyright holders.</p>
+        <p>If you believe any content on this site infringes your intellectual property rights, please
+          contact us via email at <strong>customercareverse@gmail.com</strong> to file a DMCA removal request.</p>
+      </div>
+    </div>
+
+    <div class="t-divider">— CHANGES & CONTACT —</div>
+
+    <!-- 9. Changes -->
+    <div class="t-section">
+      <div class="t-sec-header">
+        <div class="t-sec-icon" style="background:rgba(151,135,243,0.12)">
+          <i class="fas fa-pen-to-square" style="color:var(--accent)"></i>
+        </div>
+        <div class="t-sec-title">Changes to These Terms</div>
+      </div>
+      <div class="t-sec-body">
+        <p>Anime Verse reserves the right to revise, amend, or replace these Terms of Service at any time and at its
+          sole discretion. Any changes will be effective immediately upon posting to this page.
+          We are not obligated to notify users of changes.</p>
+        <p>It is your responsibility to periodically check this page for updates. Your continued use of the website
+          following any modifications constitutes your binding acceptance of the updated terms.</p>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="t-cta">
+      <i class="fas fa-question-circle"></i>
+      <h3>Have Questions About These Terms?</h3>
+      <p>If you have any questions, concerns, or requests regarding these Terms of Service, feel free to reach out to us.</p>
+      <a href="mailto:customercareverse@gmail.com" class="t-cta-btn">
+        <i class="fas fa-paper-plane"></i> Contact Us
+      </a>
+    </div>
+
+  </div>
+
+  <!-- Footer -->
+  <div class="t-footer">
+    <a href="index.html">← Back to Anime Verse</a>
+    <div style="margin-top:6px">© 2026 <strong style="color:var(--text)">ANIME VERSE</strong> — All rights reserved</div>
+  </div>
+
+  <script>
+    // Theme
+    (function(){
+      const s=localStorage.getItem('av_theme')||'dark';
+      document.documentElement.setAttribute('data-theme',s);
+    })();
+  </script>
+</body>
+</html>

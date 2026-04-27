@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>Watch — Anime Verse</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    /* ═══ PLAYER WRAPPER ═══ */
+    .vp-wrap {
+      position: relative;
+      width: 100%;
+      background: #000;
+      overflow: hidden;
+      aspect-ratio: 16/9;
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+      display: block;
+    }
+    /* CSS fallback fullscreen */
+    .vp-wrap.vp-fs {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      height: 100dvh !important;
+      aspect-ratio: unset !important;
+      z-index: 9999 !important;
+      border-radius: 0 !important;
+    }
+    .vp-wrap.vp-fs .vp-video,
+    .vp-wrap.vp-fs .vp-iframe { width:100%!important; height:100%!important; }
+
+    .vp-video { width:100%; height:100%; display:block; object-fit:contain; background:#000; }
+    .vp-iframe { width:100%; height:100%; border:none; display:block; }
+
+    /* Loader */
+    .vp-loader {
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      background:rgba(0,0,0,0.45); z-index:4; pointer-events:none;
+    }
+    .vp-spin {
+      width:44px; height:44px;
+      border:3px solid rgba(255,255,255,0.1);
+      border-top-color:var(--accent,#9787F3);
+      border-radius:50%;
+      animation:vpSpin 0.75s linear infinite;
+    }
+    @keyframes vpSpin { to { transform:rotate(360deg); } }
+
+    /* Seek flash overlay */
+    .vp-flash {
+      position:absolute; top:50%;
+      width:72px; height:72px; border-radius:50%;
+      background:rgba(255,255,255,0.15);
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      color:#fff; font-size:11px; font-weight:800;
+      transform:translateY(-50%);
+      pointer-events:none; opacity:0;
+      transition:opacity 0.18s; z-index:6;
+      font-family:'Poppins',sans-serif;
+    }
+    .vp-flash.L { left:6%; }
+    .vp-flash.R { right:6%; }
+    .vp-flash.show { opacity:1; }
+    .vp-flash i { font-size:20px; margin-bottom:2px; }
+
+    /* Tap zones for double-tap seek */
+    .vp-tap-L, .vp-tap-R {
+      position:absolute; top:0; bottom:52px;
+      width:35%; z-index:3; cursor:pointer;
+    }
+    .vp-tap-L { left:0; }
+    .vp-tap-R { right:0; }
+
+    /* Center play/pause button */
+    .vp-center {
+      position:absolute; inset:0;
+      display:flex; align-items:center; justify-content:center;
+      z-index:5; pointer-events:none; opacity:0;
+      transition:opacity 0.2s;
+    }
+    .vp-center.show { opacity:1; pointer-events:all; }
+    .vp-center-btn {
+      width:64px; height:64px;
+      background:rgba(0,0,0,0.6);
+      border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      color:#fff; font-size:26px;
+      border:2px solid rgba(255,255,255,0.3);
+      cursor:pointer;
+      transition:transform 0.12s;
+    }
+    .vp-center-btn:active { transform:scale(0.88); }
+
+    /* Subtitle overlay */
+    .vp-sub {
+      position:absolute; bottom:60px;
+      left:8px; right:8px;
+      text-align:center; z-index:4;
+      pointer-events:none; display:none;
+    }
+    .vp-sub span {
+      display:inline-block;
+      background:rgba(0,0,0,0.85);
+      color:#fff; padding:4px 12px;
+      border-radius:4px; font-size:13px;
+      line-height:1.5; font-family:'Poppins',sans-serif;
+      font-weight:500;
+    }
+
+    /* Controls overlay — full gradient */
+    .vp-controls {
+      position:absolute; inset:0;
+      display:flex; flex-direction:column;
+      justify-content:flex-end;
+      background:linear-gradient(to bottom,
+        rgba(0,0,0,0.55) 0%,
+        transparent 25%,
+        transparent 50%,
+        rgba(0,0,0,0.9) 100%);
+      z-index:7;
+      transition:opacity 0.3s;
+    }
+    .vp-controls.hidden { opacity:0; pointer-events:none; }
+
+    /* Top bar: title */
+    .vp-top {
+      display:flex; align-items:center;
+      padding:8px 10px 0; gap:6px;
+    }
+    .vp-top-title {
+      font-size:11px; color:rgba(255,255,255,0.9);
+      font-weight:700; flex:1;
+      white-space:nowrap; overflow:hidden;
+      text-overflow:ellipsis;
+      text-shadow:0 1px 4px rgba(0,0,0,0.9);
+      font-family:'Poppins',sans-serif;
+    }
+
+    /* Bottom area */
+    .vp-bottom { padding:0 8px 6px; }
+
+    /* Progress bar */
+    .vp-prog-wrap {
+      position:relative; height:22px;
+      display:flex; align-items:center;
+      cursor:pointer; margin-bottom:0;
+    }
+    .vp-prog-track {
+      position:absolute; left:0; right:0;
+      height:3px; background:rgba(255,255,255,0.25);
+      border-radius:2px; transition:height 0.15s;
+      overflow:hidden;
+    }
+    .vp-prog-wrap:hover .vp-prog-track,
+    .vp-prog-wrap:active .vp-prog-track { height:5px; }
+    .vp-prog-buf { position:absolute; height:100%; background:rgba(255,255,255,0.3); border-radius:2px; }
+    .vp-prog-fill { position:absolute; height:100%; background:var(--accent,#9787F3); border-radius:2px; width:0%; }
+    .vp-prog-thumb {
+      position:absolute; top:50%;
+      transform:translate(-50%,-50%);
+      width:12px; height:12px;
+      background:#fff; border-radius:50%;
+      pointer-events:none; opacity:0;
+      transition:opacity 0.2s;
+      box-shadow:0 1px 4px rgba(0,0,0,0.7);
+    }
+    .vp-prog-wrap:hover .vp-prog-thumb { opacity:1; }
+    .vp-seek-in {
+      position:absolute; inset:0;
+      opacity:0; cursor:pointer;
+      width:100%; height:100%;
+    }
+
+    /* ════ CONTROL ROW — FIXED FOR MOBILE ════
+       Clean layout: [▶] [←] [→] [time] [flex] [🔇] [⚙] [⛶]
+       Removed speed badge + volume slider from bar → moved to settings popup
+    */
+    .vp-ctrl {
+      display:flex;
+      align-items:center;
+      gap:0;                  /* no gap — use padding on buttons */
+      min-width:0;
+      overflow:hidden;
+    }
+    .vp-btn {
+      background:none;
+      border:none;
+      color:#fff;
+      cursor:pointer;
+      width:34px;
+      height:38px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:16px;
+      flex-shrink:0;
+      border-radius:4px;
+      transition:background 0.15s;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .vp-btn:hover { background:rgba(255,255,255,0.12); }
+    .vp-btn.lg { width:38px; font-size:18px; }
+    .vp-btn.sm { width:30px; font-size:14px; position:relative; }
+
+    /* Time display — shrinkable */
+    .vp-time {
+      font-size:10px;
+      color:rgba(255,255,255,0.85);
+      white-space:nowrap;
+      flex-shrink:1;
+      min-width:0;
+      font-family:'Poppins',sans-serif;
+      font-weight:600;
+      padding:0 4px;
+    }
+    .vp-spacer { flex:1; min-width:6px; }
+
+    /* Speed popup — triggered from settings */
+    .vp-speed-menu {
+      position:absolute;
+      bottom:52px; right:8px;
+      background:rgba(12,10,24,0.97);
+      border:1px solid rgba(255,255,255,0.1);
+      border-radius:12px; overflow:hidden;
+      z-index:10; display:none; min-width:78px;
+      box-shadow:0 8px 24px rgba(0,0,0,0.8);
+    }
+    .vp-speed-menu.open { display:block; }
+    .vp-speed-opt {
+      padding:8px 16px; font-size:13px; font-weight:700;
+      color:rgba(255,255,255,0.65); cursor:pointer;
+      font-family:'Poppins',sans-serif; text-align:center;
+      transition:background 0.15s;
+    }
+    .vp-speed-opt:hover { background:rgba(255,255,255,0.08); }
+    .vp-speed-opt.active { color:var(--accent,#9787F3); font-weight:800; }
+
+    /* Settings popup — speed now lives here */
+    .vp-settings {
+      position:absolute;
+      bottom:52px; right:8px;
+      background:rgba(12,10,24,0.97);
+      border:1px solid rgba(255,255,255,0.1);
+      border-radius:14px; padding:12px;
+      z-index:10; display:none; min-width:200px;
+      box-shadow:0 10px 30px rgba(0,0,0,0.85);
+    }
+    .vp-settings.open { display:block; }
+    .vp-set-label {
+      font-size:9px; font-weight:800;
+      color:rgba(255,255,255,0.3);
+      letter-spacing:1px; text-transform:uppercase;
+      margin-bottom:7px; margin-top:10px;
+      font-family:'Poppins',sans-serif;
+    }
+    .vp-set-label:first-child { margin-top:0; }
+    .vp-set-btns { display:flex; flex-wrap:wrap; gap:5px; }
+    .vp-s-btn {
+      padding:5px 10px; border-radius:6px;
+      border:1px solid rgba(255,255,255,0.15);
+      background:rgba(255,255,255,0.06);
+      color:rgba(255,255,255,0.6); font-size:11px;
+      cursor:pointer; font-family:'Poppins',sans-serif;
+      font-weight:700; transition:all 0.15s;
+    }
+    .vp-s-btn.active {
+      background:var(--accent,#9787F3);
+      border-color:var(--accent,#9787F3);
+      color:#fff; font-weight:800;
+    }
+    /* Speed row inside settings */
+    .vp-speed-row {
+      display:flex; flex-wrap:wrap; gap:5px;
+    }
+    .vp-speed-pill {
+      padding:5px 10px; border-radius:6px;
+      border:1px solid rgba(255,255,255,0.15);
+      background:rgba(255,255,255,0.06);
+      color:rgba(255,255,255,0.6); font-size:11px;
+      cursor:pointer; font-family:'Poppins',sans-serif;
+      font-weight:700; transition:all 0.15s;
+    }
+    .vp-speed-pill.active {
+      background:rgba(255,200,60,0.85);
+      border-color:rgba(255,200,60,0.9);
+      color:#111; font-weight:800;
+    }
+    /* Subtitle toggle row */
+    .vp-sub-row {
+      display:flex; align-items:center;
+      justify-content:space-between;
+      margin-top:10px; padding-top:10px;
+      border-top:1px solid rgba(255,255,255,0.07);
+    }
+    .vp-sub-row span {
+      font-size:11px; color:rgba(255,255,255,0.55);
+      font-family:'Poppins',sans-serif; font-weight:700;
+    }
+    .vp-tog {
+      width:36px; height:20px;
+      background:rgba(255,255,255,0.15);
+      border-radius:10px; position:relative;
+      cursor:pointer; transition:background 0.2s;
+      flex-shrink:0;
+    }
+    .vp-tog.on { background:var(--accent,#9787F3); }
+    .vp-tog::after {
+      content:''; position:absolute;
+      width:16px; height:16px; background:#fff;
+      border-radius:50%; top:2px; left:2px;
+      transition:transform 0.2s;
+      box-shadow:0 1px 3px rgba(0,0,0,0.4);
+    }
+    .vp-tog.on::after { transform:translateX(16px); }
+
+    /* Iframe fullscreen button */
+    .vp-iframe-fs {
+      position:absolute; bottom:8px; right:8px;
+      background:rgba(0,0,0,0.75); border:none;
+      color:#fff; border-radius:6px;
+      width:34px; height:34px;
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; font-size:15px; z-index:8;
+    }
+
+    /* Error overlay */
+    .vp-error {
+      position:absolute; inset:0;
+      display:flex; flex-direction:column;
+      align-items:center; justify-content:center;
+      background:rgba(0,0,0,0.92);
+      gap:12px; padding:24px;
+      text-align:center; z-index:8;
+    }
+    .vp-error i { font-size:36px; color:#e50914; }
+    .vp-error p {
+      font-size:13px; color:rgba(255,255,255,0.5);
+      line-height:1.65; font-family:'Poppins',sans-serif;
+      font-weight:500; max-width:280px;
+    }
+    .vp-error a, .vp-error-btn {
+      background:var(--accent,#9787F3); color:#fff;
+      text-decoration:none; padding:9px 20px;
+      border-radius:8px; font-size:13px; font-weight:800;
+      font-family:'Poppins',sans-serif;
+      box-shadow:0 4px 0 var(--btn-3d,#5a4cb8);
+      display:inline-flex; align-items:center; gap:7px;
+      border:none; cursor:pointer;
+    }
+
+    .hosting-guide {
+      background:rgba(151,135,243,0.08);
+      border:1.5px solid rgba(151,135,243,0.25);
+      border-radius:12px; padding:14px 16px;
+      margin:10px 14px 0;
+      font-size:12px; color:var(--text2);
+      line-height:1.7; font-family:'Poppins',sans-serif;
+      font-weight:500;
+    }
+    .hosting-guide strong { color:var(--accent); font-weight:800; display:block; margin-bottom:6px; font-size:13px; }
+    .hosting-guide a { color:var(--accent); font-weight:700; text-decoration:underline; }
+
+    /* TG-only player */
+    .tg-only-player {
+      width:calc(100% - 28px); margin:0 14px;
+      aspect-ratio:16/9; position:relative;
+      overflow:hidden;
+      display:flex; align-items:center; justify-content:center;
+      background:#090909; border-radius:12px;
+      box-shadow:0 4px 0 rgba(0,0,0,0.35),0 8px 20px rgba(0,0,0,0.5);
+    }
+    .tg-only-bg {
+      position:absolute; inset:-5px;
+      background-size:cover; background-position:center 30%;
+      filter:blur(3px) brightness(0.45);
+    }
+    .tg-only-inner {
+      position:relative; z-index:1;
+      display:flex; flex-direction:column;
+      align-items:center; gap:10px;
+    }
+    .tg-only-inner i { font-size:52px; color:#2ca5e0; }
+    .tg-only-inner span {
+      font-size:15px; font-weight:800; color:#fff;
+      text-shadow:0 2px 10px rgba(0,0,0,0.9);
+      font-family:'Poppins',sans-serif;
+    }
+
+    /* ═══ LIKE/DISLIKE/SHARE/EPISODES ═══ */
+    .ld-wrap {
+      display:flex; align-items:center;
+      gap:8px; padding:12px 0 4px;
+      flex-wrap:nowrap; overflow:hidden;
+    }
+    .ld-bar {
+      display:flex; align-items:center; flex-shrink:0;
+      background:var(--card-bg); border:1.5px solid var(--border);
+      border-radius:8px; overflow:hidden;
+      box-shadow:0 4px 0 var(--btn-3d),0 6px 14px var(--shadow);
+    }
+    .ld-btn {
+      display:flex; align-items:center; gap:7px;
+      padding:10px 16px; background:none; border:none;
+      cursor:pointer; color:var(--text2);
+      font-family:'Poppins',sans-serif;
+      font-size:13px; font-weight:800;
+      transition:all 0.18s;
+      -webkit-tap-highlight-color:transparent;
+      position:relative; overflow:hidden; flex-shrink:0;
+    }
+    .ld-btn:hover { background:var(--bg3); }
+    .ld-btn:active { transform:scale(0.94); }
+    .ld-btn i { font-size:18px; display:block; transition:transform 0.22s; }
+    .ld-btn.liked { color:#1a73e8; background:rgba(26,115,232,0.1); }
+    .ld-btn.liked i { color:#1a73e8; }
+    .ld-btn.disliked { color:#e53935; background:rgba(229,57,53,0.1); }
+    .ld-btn.disliked i { color:#e53935; }
+    .ld-sep { width:1.5px; height:26px; background:var(--border); flex-shrink:0; }
+    .ld-count { min-width:12px; font-weight:800; font-size:12px; }
+    .ld-share-btn {
+      display:flex; align-items:center; gap:6px; flex-shrink:0;
+      padding:10px 14px;
+      background:var(--card-bg); border:1.5px solid var(--border);
+      border-radius:8px; color:var(--text2);
+      font-family:'Poppins',sans-serif; font-size:13px; font-weight:800;
+      cursor:pointer; transition:all 0.18s;
+      box-shadow:0 4px 0 var(--btn-3d),0 6px 14px var(--shadow);
+    }
+    .ld-share-btn:hover { border-color:var(--accent); color:var(--accent); transform:translateY(-1px); }
+    .ld-share-btn:active { transform:translateY(3px); box-shadow:0 1px 0 var(--btn-3d); }
+    .ep-inline-btn {
+      display:flex; align-items:center; gap:6px; flex-shrink:0;
+      margin-left:auto;
+      padding:10px 14px;
+      background:var(--card-bg); border:1.5px solid var(--border);
+      border-radius:8px; color:var(--text2);
+      font-family:'Poppins',sans-serif; font-size:13px; font-weight:800;
+      cursor:pointer; transition:all 0.18s;
+      box-shadow:0 4px 0 var(--btn-3d),0 6px 14px var(--shadow);
+    }
+    .ep-inline-btn:hover { border-color:var(--accent); color:var(--accent); transform:translateY(-1px); }
+    .ep-inline-btn:active { transform:translateY(3px); box-shadow:0 1px 0 var(--btn-3d); }
+
+    @keyframes ldPop { 0%{transform:scale(1)} 35%{transform:scale(1.7)} 65%{transform:scale(0.85)} 100%{transform:scale(1.15)} }
+    @keyframes ldShake { 0%,100%{transform:scale(1) rotate(0)} 25%{transform:scale(1.5) rotate(-16deg)} 75%{transform:scale(1.5) rotate(16deg)} }
+    .ld-btn.anim-like i { animation:ldPop 0.45s cubic-bezier(0.34,1.56,0.64,1); }
+    .ld-btn.anim-dislike i { animation:ldShake 0.4s ease; }
+
+    /* ═══ COMMENTS ═══ */
+    .comment-section {
+      margin-top:12px; background:var(--card-bg);
+      border:1.5px solid var(--border); border-radius:16px;
+      overflow:hidden;
+      box-shadow:0 4px 0 var(--btn-3d),0 6px 14px var(--shadow);
+    }
+    .comment-head {
+      padding:14px 16px; border-bottom:1px solid var(--border);
+      display:flex; align-items:center; gap:8px;
+    }
+    .comment-head-title { font-size:14px; font-weight:800; color:var(--text); flex:1; }
+    .comment-count-badge {
+      font-size:11px; background:var(--accent); color:#fff;
+      border-radius:20px; padding:2px 8px; font-weight:800; display:none;
+    }
+    .comment-input-wrap {
+      padding:12px 16px; border-bottom:1px solid var(--border);
+      display:flex; gap:10px;
+    }
+    .comment-user-av {
+      width:36px; height:36px; border-radius:50%;
+      background:var(--accent);
+      display:flex; align-items:center; justify-content:center;
+      font-size:15px; font-weight:800; color:#fff;
+      flex-shrink:0; overflow:hidden;
+    }
+    .comment-user-av img { width:100%; height:100%; object-fit:cover; }
+    .comment-textarea-wrap { flex:1; }
+    .comment-textarea {
+      width:100%; min-height:42px; max-height:100px;
+      background:var(--bg3); border:1.5px solid var(--border);
+      border-radius:10px; padding:10px 12px; color:var(--text);
+      font-family:'Poppins',sans-serif; font-size:13px; font-weight:500;
+      resize:none; outline:none; box-sizing:border-box;
+      transition:border-color 0.2s;
+    }
+    .comment-textarea:focus { border-color:var(--accent); }
+    .comment-textarea::placeholder { color:var(--text2); }
+    .comment-post-btn {
+      margin-top:8px; background:var(--accent); color:#fff;
+      border:none; border-radius:7px; padding:8px 18px;
+      font-size:13px; font-weight:800; cursor:pointer;
+      font-family:'Poppins',sans-serif; transition:all 0.12s;
+      box-shadow:0 3px 0 var(--btn-3d),0 4px 8px var(--shadow);
+      display:block;
+    }
+    .comment-post-btn:hover { transform:translateY(-1px); }
+    .comment-post-btn:active { transform:translateY(2px); box-shadow:0 1px 0 var(--btn-3d); }
+    .comment-post-btn:disabled { opacity:0.4; cursor:not-allowed; }
+    .comment-login-prompt {
+      padding:20px 16px; text-align:center;
+      border-bottom:1px solid var(--border);
+      font-size:13px; color:var(--text2); font-weight:600;
+    }
+    .comment-list { padding:4px 0 8px; }
+    .comment-item {
+      display:flex; gap:10px; padding:12px 16px;
+      border-bottom:1px solid rgba(128,128,128,0.1);
+      position:relative;
+    }
+    .comment-item:last-child { border-bottom:none; }
+    .comment-item-av {
+      width:34px; height:34px; border-radius:50%; background:var(--bg3);
+      display:flex; align-items:center; justify-content:center;
+      font-size:14px; font-weight:800; color:var(--text);
+      flex-shrink:0; overflow:hidden;
+    }
+    .comment-item-av img { width:100%; height:100%; object-fit:cover; }
+    .comment-body { flex:1; min-width:0; }
+    .comment-meta { display:flex; align-items:baseline; gap:6px; margin-bottom:4px; flex-wrap:wrap; }
+    .comment-name { font-size:13px; font-weight:800; color:var(--text); }
+    .comment-time { font-size:11px; color:var(--text2); font-weight:600; }
+    .comment-text { font-size:13px; color:var(--text2); line-height:1.6; word-break:break-word; font-weight:500; }
+    .comment-del {
+      position:absolute; top:10px; right:12px;
+      background:none; border:none; color:var(--text2);
+      cursor:pointer; font-size:12px; opacity:0;
+      padding:5px 7px; border-radius:5px;
+      transition:opacity 0.2s, color 0.2s;
+    }
+    .comment-item:hover .comment-del { opacity:0.7; }
+    .comment-del:hover { color:#e50914; opacity:1 !important; }
+    .comments-empty, .comments-loading {
+      padding:28px 16px; text-align:center;
+      font-size:13px; color:var(--text2); font-weight:600;
+    }
+    .comments-loading i { font-size:22px; color:var(--accent); }
+
+    /* ═══ EPISODE SELECTOR ═══ */
+    .ep-sel-page {
+      position:fixed; inset:0; z-index:300;
+      background:var(--bg); display:none; flex-direction:column;
+    }
+    .ep-sel-page.open { display:flex; }
+    .ep-sel-top {
+      display:flex; align-items:center; gap:12px; padding:13px 16px;
+      border-bottom:1.5px solid var(--border); flex-shrink:0;
+      background:var(--header-bg); backdrop-filter:blur(10px);
+      box-shadow:0 2px 8px var(--shadow);
+    }
+    .ep-sel-title { font-size:16px; font-weight:800; color:var(--text); flex:1; }
+    .ep-sel-body { display:flex; flex:1; overflow:hidden; }
+    .ep-season-rail {
+      width:90px; flex-shrink:0; overflow-y:auto;
+      border-right:1.5px solid var(--border); background:var(--bg2);
+    }
+    .ep-season-btn {
+      width:100%; padding:13px 8px; background:none; border:none;
+      color:var(--text2); font-size:11px; font-family:'Poppins',sans-serif;
+      font-weight:700; cursor:pointer; text-align:center;
+      transition:all 0.15s; border-bottom:1px solid var(--border);
+    }
+    .ep-season-btn.active { color:var(--accent); font-weight:800; background:var(--bg3); }
+    .ep-num-area { flex:1; overflow-y:auto; padding:14px; }
+    .ep-num-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:8px; }
+    .ep-num-box {
+      aspect-ratio:1; border-radius:8px; border:1.5px solid var(--border);
+      background:var(--bg3); display:flex; align-items:center; justify-content:center;
+      font-size:12px; font-weight:800; color:var(--text2); cursor:pointer;
+      transition:all 0.15s; font-family:'Poppins',sans-serif; line-height:1;
+      box-shadow:0 2px 0 var(--btn-3d);
+    }
+    .ep-num-box:hover { border-color:var(--accent); color:var(--text); }
+    .ep-num-box.current { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .ep-num-box.tg { border-color:rgba(44,165,224,0.4); color:#2ca5e0; background:rgba(44,165,224,0.08); }
+    .ep-num-box.locked { opacity:0.3; cursor:not-allowed; }
+
+    /* ═══ WATCH INFO ═══ */
+    .watch-label { font-size:11px; color:var(--accent); font-weight:800; margin-bottom:5px; text-transform:uppercase; letter-spacing:0.5px; }
+    .watch-title { font-size:18px; font-weight:800; color:var(--text); line-height:1.3; margin-bottom:8px; }
+    .watch-chips { display:flex; gap:8px; flex-wrap:wrap; }
+    .watch-chip {
+      font-size:12px; color:var(--text2); display:flex; align-items:center; gap:4px;
+      background:var(--bg3); border:1.5px solid var(--border); padding:4px 10px;
+      border-radius:6px; font-weight:700; box-shadow:0 2px 0 var(--btn-3d);
+    }
+    .watch-chip i { color:var(--accent); font-size:10px; }
+    .watch-desc { font-size:13px; color:var(--text2); line-height:1.7; margin-top:10px; font-weight:500; }
+    .ep-nav { display:flex; gap:8px; margin-top:12px; }
+    .ep-nav > * { flex:1; }
+    .lq-box {
+      background:var(--card-bg); border:1.5px solid var(--border);
+      border-radius:14px; padding:14px 16px; margin-top:12px;
+      box-shadow:0 3px 0 var(--btn-3d),0 5px 12px var(--shadow);
+    }
+    .lq-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px; }
+    .lq-row:last-child { margin-bottom:0; }
+    .lq-label { font-size:11px; font-weight:800; color:var(--text2); text-transform:uppercase; letter-spacing:0.5px; min-width:56px; }
+    .tg-box {
+      background:var(--card-bg); border:1.5px solid var(--border);
+      border-radius:14px; padding:14px 16px; margin-top:12px;
+      box-shadow:0 3px 0 var(--btn-3d),0 5px 12px var(--shadow);
+    }
+    .tg-box-head { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+    .tg-circle { width:34px; height:34px; border-radius:8px; background:rgba(44,165,224,0.15); display:flex; align-items:center; justify-content:center; }
+    .tg-circle i { color:#2ca5e0; font-size:17px; }
+    .tg-box-title { font-size:14px; font-weight:800; color:var(--text); }
+    .mkv-note {
+      background:rgba(255,180,0,0.08); border:1.5px solid rgba(255,180,0,0.3);
+      border-radius:10px; padding:12px 14px; margin-top:10px;
+      font-size:12px; color:var(--text2); line-height:1.7;
+      display:flex; gap:8px; font-weight:500;
+    }
+    .mkv-note i { color:#ffb400; flex-shrink:0; margin-top:1px; }
+
+    /* Toast */
+    #vp-toast {
+      position:fixed; bottom:80px; left:50%;
+      transform:translateX(-50%);
+      background:rgba(20,16,40,0.95); color:#fff;
+      padding:10px 18px; border-radius:20px; font-size:13px;
+      z-index:5000; font-family:'Poppins',sans-serif; font-weight:700;
+      pointer-events:none; opacity:0; transition:opacity 0.2s;
+      white-space:nowrap;
+    }
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="header-left">
+      <button class="icon-btn" onclick="history.back()"><i class="fas fa-arrow-left"></i></button>
+      <a href="index.html" class="logo">ANIME <span>VERSE</span></a>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn" id="themeBtn" onclick="toggleTheme()"><i class="fas fa-moon"></i></button>
+    </div>
+  </header>
+
+  <!-- Episode Selector -->
+  <div class="ep-sel-page" id="epSelPage">
+    <div class="ep-sel-top">
+      <button class="icon-btn" onclick="closeSelector()"><i class="fas fa-arrow-left"></i></button>
+      <div class="ep-sel-title" id="epSelTitle">Episodes</div>
+    </div>
+    <div class="ep-sel-body">
+      <div class="ep-season-rail" id="epSeasonRail"></div>
+      <div class="ep-num-area" id="epNumArea"></div>
+    </div>
+  </div>
+
+  <div id="vp-toast"></div>
+
+  <main id="watchMain" style="margin-top:58px;padding:0 0 30px;min-height:60vh">
+    <div class="empty-state">
+      <i class="fas fa-circle-notch fa-spin" style="font-size:40px;color:var(--accent)"></i>
+      <h2 style="margin-top:16px">Loading...</h2>
+    </div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="data.js"></script>
+  <script>
+  function toggleTheme(){const h=document.documentElement,b=document.getElementById('themeBtn'),d=h.getAttribute('data-theme')==='dark';h.setAttribute('data-theme',d?'light':'dark');b.innerHTML=d?'<i class="fas fa-sun"></i>':'<i class="fas fa-moon"></i>';localStorage.setItem('av_theme',d?'light':'dark');}
+  function loadTheme(){const s=localStorage.getItem('av_theme')||'dark';document.documentElement.setAttribute('data-theme',s);const b=document.getElementById('themeBtn');if(b)b.innerHTML=s==='dark'?'<i class="fas fa-moon"></i>':'<i class="fas fa-sun"></i>';}
+  loadTheme();
+
+  const qualityOrder=['4k','1080p','720p','480p'];
+  const qualityConfig={'480p':{label:'480p SD',color:'#666'},'720p':{label:'720p HD',color:'#2a6dd9'},'1080p':{label:'1080p FHD',color:'#27ae60'},'4k':{label:'4K UHD',color:'#9787F3'}};
+  const langFlags={'Japanese':'🇯🇵','English Dub':'🇺🇸','Hindi Dub':'🇮🇳','Korean':'🇰🇷','Chinese':'🇨🇳','Spanish':'🇪🇸','French':'🇫🇷','Portuguese':'🇧🇷'};
+
+  let globalAnime=null,globalAnimeId=null,currentSeasonId=null,currentEpId=null,currentUser=null;
+  let currentAnimeId='',currentEpKey='',likeState=null;
+  auth.onAuthStateChanged(u=>{currentUser=u;});
+
+  function hasVideoContent(ep){if(!ep)return false;const langs=ep.languages||{};for(const qm of Object.values(langs)){if(qm&&typeof qm==='object')for(const u of Object.values(qm))if(u&&typeof u==='string'&&u.trim())return true;}if(ep.videoUrls&&Object.values(ep.videoUrls).some(u=>u&&u.trim()))return true;if(ep.videoUrl&&ep.videoUrl.trim())return true;return false;}
+  function hasEpTg(ep){if(!ep)return false;if(ep.telegramLinks&&Object.values(ep.telegramLinks).some(v=>v&&v.trim()))return true;if(ep.telegramUrl&&ep.telegramUrl.trim())return true;return false;}
+  function getEpLangs(ep){if(ep.languages&&Object.keys(ep.languages).length>0){const f={};Object.entries(ep.languages).forEach(([l,qm])=>{if(qm&&Object.values(qm).some(u=>u&&u.trim()))f[l]=qm;});if(Object.keys(f).length)return f;}if(ep.videoUrls)return{'Japanese':ep.videoUrls};if(ep.videoUrl)return{'Japanese':{'720p':ep.videoUrl}};return{};}
+  function getBest(ld){for(const q of qualityOrder)if(ld[q]&&ld[q].trim())return q;return Object.keys(ld||{})[0]||'';}
+  function getUrlType(url){if(!url||!url.trim())return null;url=url.trim();if(url.includes('youtube.com/watch')||url.includes('youtu.be/')||url.includes('youtube.com/embed'))return'youtube';if(url.includes('drive.google.com'))return'drive';if(url.match(/\.(mp4|webm|ogg|m3u8|mov)(\?|#|$)/i))return'direct';if(url.match(/\.mkv(\?|#|$)/i))return'mkv';if(url.includes('streamtape.com')||url.includes('streamtape.net'))return'streamtape';if(url.includes('cloudfront.net')||url.includes('akamaized.net')||url.includes('b-cdn.net'))return'direct';return'iframe';}
+  function getEmbedSrc(url){const t=getUrlType(url);if(t==='youtube'){if(url.includes('youtu.be/')){const id=url.split('youtu.be/')[1].split('?')[0];return`https://www.youtube.com/embed/${id}?autoplay=1&rel=0&playsinline=1`;}try{const id=new URL(url).searchParams.get('v');if(id)return`https://www.youtube.com/embed/${id}?autoplay=1&rel=0&playsinline=1`;}catch{}}if(t==='drive'){const m1=url.match(/\/d\/([a-zA-Z0-9_-]{10,})/),m2=url.match(/[?&]id=([a-zA-Z0-9_-]{10,})/),id=m1?m1[1]:(m2?m2[1]:null);if(id)return`https://drive.google.com/file/d/${id}/preview?usp=sharing`;}if(t==='streamtape'){const m=url.match(/\/(?:v|e|video|stream)\/([a-zA-Z0-9_-]+)/);if(m)return`https://streamtape.com/e/${m[1]}/`;}return url;}
+  function fmtTime(s){if(!isFinite(s)||s<0)return'0:00';const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=Math.floor(s%60);if(h>0)return`${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;return`${m}:${String(sec).padStart(2,'0')}`;}
+  function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function showToast(msg){const t=document.getElementById('vp-toast');if(!t)return;t.textContent=msg;t.style.opacity='1';clearTimeout(t._tmr);t._tmr=setTimeout(()=>{t.style.opacity='0';},2500);}
+
+  /* ════ FULLSCREEN ════ */
+  function enterFs(el){
+    if(el.requestFullscreen)el.requestFullscreen().catch(()=>el.classList.add('vp-fs'));
+    else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
+    else{el.classList.add('vp-fs');document.body.style.overflow='hidden';}
+  }
+  function exitFs(){
+    if(document.fullscreenElement&&document.exitFullscreen)document.exitFullscreen().catch(()=>{});
+    else if(document.webkitFullscreenElement&&document.webkitExitFullscreen)document.webkitExitFullscreen();
+    const el=document.querySelector('.vp-fs');
+    if(el){el.classList.remove('vp-fs');document.body.style.overflow='';}
+  }
+  document.addEventListener('fullscreenchange',()=>{
+    const isFs=!!(document.fullscreenElement||document.webkitFullscreenElement);
+    const btn=document.getElementById('vpFsBtn');
+    if(btn)btn.innerHTML=isFs?'<i class="fas fa-compress"></i>':'<i class="fas fa-expand"></i>';
+    // also sync CSS fallback
+    const w=document.getElementById('vpWrap');
+    if(isFs&&w)w.classList.remove('vp-fs');
+  });
+  document.addEventListener('webkitfullscreenchange',()=>{
+    const isFs=!!document.webkitFullscreenElement;
+    const btn=document.getElementById('vpFsBtn');
+    if(btn)btn.innerHTML=isFs?'<i class="fas fa-compress"></i>':'<i class="fas fa-expand"></i>';
+  });
+
+  let vpState={playing:false,volume:1,muted:false,speed:1,ctrlTimer:null};
+  let subTracks={},subLang=null,subOn=true,vpVideoTitle='';
+
+  /* ════ BUILD DIRECT PLAYER ════ */
+  function buildDirectPlayer(url,title,langKeys,initQs,langBtnsXp,qualBtnsXp){
+    const isMkv=/\.mkv(\?|#|$)/i.test(url);
+    // Speed options for settings panel
+    const speedOpts=[0.5,0.75,1,1.25,1.5,2].map(s=>`<button class="vp-speed-pill${s===1?' active':''}" onclick="vpSetSpeed(${s})">${s}x</button>`).join('');
+    return `<div class="vp-wrap" id="vpWrap">
+      <video class="vp-video" id="vpVideo" playsinline webkit-playsinline preload="auto">
+        <source src="${url}" type="${isMkv?'video/x-matroska':'video/mp4'}"/>
+        <source src="${url}"/>
+      </video>
+      <div class="vp-sub" id="vpSub"><span id="vpSubTxt"></span></div>
+      <div class="vp-loader" id="vpLoader"><div class="vp-spin"></div></div>
+      <div class="vp-flash L" id="vpFL"><i class="fas fa-backward"></i><span>10s</span></div>
+      <div class="vp-flash R" id="vpFR"><i class="fas fa-forward"></i><span>10s</span></div>
+      <div class="vp-tap-L" id="vpTL"></div>
+      <div class="vp-tap-R" id="vpTR"></div>
+      <div class="vp-center" id="vpCenter">
+        <div class="vp-center-btn" id="vpCenterBtn"><i class="fas fa-play"></i></div>
+      </div>
+      <div class="vp-controls" id="vpCtrls">
+        <div class="vp-top"><span class="vp-top-title">${escHtml(title)}</span></div>
+        <div class="vp-settings" id="vpSettings">
+          ${langKeys.length>0?`<div class="vp-set-label">Language</div><div class="vp-set-btns" id="vpLangBtns">${langBtnsXp}</div>`:''}
+          ${initQs.length>0?`<div class="vp-set-label">Quality</div><div class="vp-set-btns" id="vpQualBtns">${qualBtnsXp}</div>`:''}
+          <div class="vp-set-label">Speed</div>
+          <div class="vp-speed-row" id="vpSpeedRow">${speedOpts}</div>
+          <div class="vp-sub-row">
+            <span><i class="fas fa-closed-captioning" style="margin-right:5px"></i>Subtitles</span>
+            <div class="vp-tog on" id="vpSubTog" onclick="vpToggleSub()"></div>
+          </div>
+        </div>
+        <div class="vp-bottom">
+          <div class="vp-prog-wrap" id="vpProgWrap">
+            <div class="vp-prog-track">
+              <div class="vp-prog-buf" id="vpBuf"></div>
+              <div class="vp-prog-fill" id="vpFill"></div>
+            </div>
+            <div class="vp-prog-thumb" id="vpThumb"></div>
+            <input type="range" class="vp-seek-in" id="vpSeek" min="0" max="100" step="0.01" value="0"/>
+          </div>
+          <div class="vp-ctrl">
+            <button class="vp-btn lg" id="vpPlayBtn" onclick="vpTogglePlay()">
+              <i class="fas fa-play"></i>
+            </button>
+            <button class="vp-btn sm" onclick="vpSeekRel(-10)" title="-10s">
+              <i class="fas fa-rotate-left"></i>
+              <span style="position:absolute;font-size:7px;bottom:5px;font-weight:800;color:#fff;line-height:1">10</span>
+            </button>
+            <button class="vp-btn sm" onclick="vpSeekRel(10)" title="+10s">
+              <i class="fas fa-rotate-right"></i>
+              <span style="position:absolute;font-size:7px;bottom:5px;font-weight:800;color:#fff;line-height:1">10</span>
+            </button>
+            <span class="vp-time" id="vpTime">0:00</span>
+            <div class="vp-spacer"></div>
+            <button class="vp-btn sm" onclick="vpToggleMute()" title="Mute">
+              <i class="fas fa-volume-high" id="vpVolIcon"></i>
+            </button>
+            <button class="vp-btn sm" onclick="vpToggleSettings()" title="Settings">
+              <i class="fas fa-gear"></i>
+            </button>
+            <button class="vp-btn lg" id="vpFsBtn" onclick="vpToggleFs()" title="Fullscreen">
+              <i class="fas fa-expand"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  function buildIframePlayer(url,title){
+    const src=getEmbedSrc(url);
+    return `<div class="vp-wrap" id="vpWrap" style="aspect-ratio:16/9">
+      <iframe class="vp-iframe" src="${src}" allowfullscreen webkitallowfullscreen
+        allow="autoplay; fullscreen; encrypted-media; picture-in-picture"></iframe>
+      <button class="vp-iframe-fs" id="vpFsBtn" onclick="vpToggleFs()">
+        <i class="fas fa-expand"></i>
+      </button>
+    </div>`;
+  }
+
+  /* ════ PLAYER EVENTS ════ */
+  function initPlayerEvents(){
+    const video=document.getElementById('vpVideo'),
+          wrap=document.getElementById('vpWrap'),
+          ctrls=document.getElementById('vpCtrls'),
+          loader=document.getElementById('vpLoader'),
+          playBtn=document.getElementById('vpPlayBtn'),
+          center=document.getElementById('vpCenter'),
+          cBtn=document.getElementById('vpCenterBtn'),
+          fill=document.getElementById('vpFill'),
+          buf=document.getElementById('vpBuf'),
+          thumb=document.getElementById('vpThumb'),
+          seek=document.getElementById('vpSeek'),
+          timeEl=document.getElementById('vpTime'),
+          tL=document.getElementById('vpTL'),
+          tR=document.getElementById('vpTR'),
+          fL=document.getElementById('vpFL'),
+          fR=document.getElementById('vpFR');
+    if(!video||!wrap)return;
+
+    function showCtrls(){
+      if(ctrls)ctrls.classList.remove('hidden');
+      clearTimeout(vpState.ctrlTimer);
+      if(vpState.playing)vpState.ctrlTimer=setTimeout(()=>ctrls?.classList.add('hidden'),3200);
+    }
+    wrap.addEventListener('touchstart',showCtrls,{passive:true});
+    wrap.addEventListener('mousemove',showCtrls);
+
+    video.addEventListener('play',()=>{vpState.playing=true;if(playBtn)playBtn.innerHTML='<i class="fas fa-pause"></i>';if(cBtn)cBtn.innerHTML='<i class="fas fa-pause"></i>';center?.classList.remove('show');if(loader)loader.style.display='none';showCtrls();});
+    video.addEventListener('pause',()=>{vpState.playing=false;if(playBtn)playBtn.innerHTML='<i class="fas fa-play"></i>';if(cBtn)cBtn.innerHTML='<i class="fas fa-play"></i>';center?.classList.add('show');if(ctrls)ctrls.classList.remove('hidden');clearTimeout(vpState.ctrlTimer);});
+    video.addEventListener('ended',()=>{vpState.playing=false;if(playBtn)playBtn.innerHTML='<i class="fas fa-rotate-right"></i>';if(cBtn)cBtn.innerHTML='<i class="fas fa-rotate-right"></i>';center?.classList.add('show');});
+    video.addEventListener('waiting',()=>{if(loader)loader.style.display='flex';});
+    video.addEventListener('canplay',()=>{if(loader)loader.style.display='none';});
+    video.addEventListener('loadstart',()=>{if(loader)loader.style.display='flex';});
+    video.addEventListener('error',()=>{
+      if(loader)loader.style.display='none';
+      wrap.querySelector('.vp-error')?.remove();
+      const src=video.currentSrc||video.src||'';
+      const isMkv=/\.mkv/i.test(src);
+      const d=document.createElement('div');d.className='vp-error';
+      d.innerHTML=`<i class="fas fa-triangle-exclamation"></i>
+        <p>${isMkv?'MKV files cannot stream in browser.<br/>Upload to <strong>Streamtape.com</strong> (free) or YouTube Unlisted and use that link.':'Video failed to load. Check the URL or try a different quality.'}</p>
+        ${src?`<a href="${src}" download class="vp-error-btn"><i class="fas fa-download"></i> Download</a>`:''}`;
+      wrap.appendChild(d);
+    });
+    video.addEventListener('timeupdate',()=>{
+      if(!video.duration)return;
+      const pct=(video.currentTime/video.duration)*100;
+      if(fill)fill.style.width=pct+'%';
+      if(thumb)thumb.style.left=pct+'%';
+      if(seek)seek.value=pct;
+      if(timeEl)timeEl.textContent=fmtTime(video.currentTime)+' / '+fmtTime(video.duration);
+      vpUpdateSub(video.currentTime);
+    });
+    video.addEventListener('progress',()=>{
+      if(!video.duration||!video.buffered.length)return;
+      if(buf)buf.style.width=(video.buffered.end(video.buffered.length-1)/video.duration)*100+'%';
+    });
+    if(seek)seek.addEventListener('input',function(){
+      if(!video.duration)return;
+      video.currentTime=(this.value/100)*video.duration;
+      if(fill)fill.style.width=this.value+'%';
+      if(thumb)thumb.style.left=this.value+'%';
+    });
+
+    // Double-tap seek
+    let tapT=null,lastS=null;
+    function handleTap(side){
+      if(tapT&&lastS===side){
+        clearTimeout(tapT);tapT=null;
+        vpSeekRel(side==='R'?10:-10);
+        const fl=side==='R'?fR:fL;
+        fl?.classList.add('show');
+        setTimeout(()=>fl?.classList.remove('show'),600);
+      }else{
+        lastS=side;
+        tapT=setTimeout(()=>{tapT=null;vpTogglePlay();},260);
+      }
+    }
+    tL?.addEventListener('click',()=>handleTap('L'));
+    tR?.addEventListener('click',()=>handleTap('R'));
+    cBtn?.addEventListener('click',(e)=>{e.stopPropagation();vpTogglePlay();});
+
+    if(/\.mkv/i.test(video.src||'')){
+      const note=document.createElement('div');note.className='mkv-note';
+      note.innerHTML=`<i class="fas fa-circle-info"></i><span><strong>MKV detected.</strong> Upload to <a href="https://streamtape.com" target="_blank">Streamtape.com</a> (free) for mobile playback.</span>`;
+      wrap.insertAdjacentElement('afterend',note);
+    }
+
+    video.play().catch(()=>center?.classList.add('show'));
+  }
+
+  /* ════ PLAYER CONTROLS ════ */
+  window.vpTogglePlay=()=>{const v=document.getElementById('vpVideo');if(!v)return;v.paused?v.play():v.pause();};
+  window.vpSeekRel=(s)=>{const v=document.getElementById('vpVideo');if(!v)return;v.currentTime=Math.max(0,Math.min(v.duration||0,v.currentTime+s));};
+  window.vpToggleMute=()=>{
+    const v=document.getElementById('vpVideo');if(!v)return;
+    v.muted=!v.muted;vpState.muted=v.muted;
+    vpVolIcon(v.muted?0:vpState.volume);
+  };
+  function vpVolIcon(v){
+    const e=document.getElementById('vpVolIcon');if(!e)return;
+    e.className=v===0?'fas fa-volume-xmark':v<0.5?'fas fa-volume-low':'fas fa-volume-high';
+  }
+  window.vpSetSpeed=(s)=>{
+    const v=document.getElementById('vpVideo');if(v)v.playbackRate=s;
+    vpState.speed=s;
+    document.querySelectorAll('.vp-speed-pill').forEach(el=>el.classList.toggle('active',parseFloat(el.textContent)===s));
+  };
+  window.vpToggleSettings=()=>{
+    const p=document.getElementById('vpSettings');
+    if(p)p.classList.toggle('open');
+  };
+  window.vpToggleFs=()=>{
+    const w=document.getElementById('vpWrap');if(!w)return;
+    const isNativeFs=!!(document.fullscreenElement||document.webkitFullscreenElement);
+    const isCssFs=w.classList.contains('vp-fs');
+    if(isNativeFs){
+      exitFs();
+    }else if(isCssFs){
+      w.classList.remove('vp-fs');
+      document.body.style.overflow='';
+      const btn=document.getElementById('vpFsBtn');
+      if(btn)btn.innerHTML='<i class="fas fa-expand"></i>';
+    }else{
+      enterFs(w);
+      // CSS fallback triggers after short delay if native fails
+      setTimeout(()=>{
+        if(!document.fullscreenElement&&!document.webkitFullscreenElement){
+          w.classList.add('vp-fs');
+          document.body.style.overflow='hidden';
+          const btn=document.getElementById('vpFsBtn');
+          if(btn)btn.innerHTML='<i class="fas fa-compress"></i>';
+        }
+      },300);
+    }
+  };
+  window.vpToggleSub=()=>{
+    subOn=!subOn;
+    const tog=document.getElementById('vpSubTog');if(tog)tog.classList.toggle('on',subOn);
+    const s=document.getElementById('vpSub');if(s)s.style.display=(!subOn||!subLang)?'none':'block';
+  };
+  function vpUpdateSub(t){
+    const ov=document.getElementById('vpSub'),sp=document.getElementById('vpSubTxt');
+    if(!ov||!sp||!subOn||!subLang){if(ov)ov.style.display='none';return;}
+    const cues=subTracks[subLang]||[];
+    const cue=cues.find(c=>t>=c.start&&t<=c.end);
+    if(cue){sp.textContent=cue.text;ov.style.display='block';}else ov.style.display='none';
+  }
+
+  window.loadVideoUrl=(url,quality)=>{
+    document.querySelectorAll('.quality-btn,.vp-s-btn[data-quality]').forEach(b=>b.classList.toggle('active',b.dataset.quality===quality));
+    const type=getUrlType(url),ps=document.getElementById('playerSection');if(!ps)return;
+    if(type==='direct'||type==='mkv'){const v=document.getElementById('vpVideo');if(v){ps.querySelector('.vp-error')?.remove();v.src=url;v.load();v.play().catch(()=>{});}}
+    else{ps.innerHTML=buildIframePlayer(url,vpVideoTitle);}
+  };
+
+  window.switchLanguage=(lang,safeData)=>{
+    const ld=JSON.parse(safeData.replace(/&quot;/g,'"'));
+    document.querySelectorAll('.lang-btn,.vp-s-btn[data-lang]').forEach(b=>b.classList.toggle('active',b.dataset.lang===lang));
+    const available=qualityOrder.filter(q=>ld[q]&&ld[q].trim());
+    const qHtml=available.map(q=>{const cfg=qualityConfig[q]||{label:q,color:'#888'};return`<button class="quality-btn${q===getBest(ld)?' active':''}" data-quality="${q}" onclick="loadVideoUrl('${ld[q].replace(/'/g,"\\'")}','${q}')" style="--qcolor:${cfg.color}">${cfg.label}</button>`;}).join('');
+    const xHtml=available.map(q=>{const cfg=qualityConfig[q]||{label:q,color:'#888'};return`<button class="vp-s-btn" data-quality="${q}" onclick="loadVideoUrl('${ld[q].replace(/'/g,"\\'")}','${q}')">${cfg.label}</button>`;}).join('');
+    const qc=document.getElementById('qualityBtnsContainer');if(qc)qc.innerHTML=qHtml;
+    const xqc=document.getElementById('vpQualBtns');if(xqc)xqc.innerHTML=xHtml;
+    const best=getBest(ld);if(best&&ld[best])setTimeout(()=>loadVideoUrl(ld[best],best),50);
+  };
+
+  /* ════ LIKE/DISLIKE ════ */
+  async function initLikeDislike(){if(!currentUser)return;try{const doc=await db.collection('ep_reactions').doc(`${currentUser.uid}_${currentAnimeId}_${currentEpKey}`).get();if(doc.exists){likeState=doc.data().type;refreshLikeUI();}}catch(e){}}
+  async function loadLikeCounts(){try{const doc=await db.collection('ep_counts').doc(`${currentAnimeId}_${currentEpKey}`).get();const d=doc.exists?doc.data():{};const lc=d.like||0,dc=d.dislike||0;const le=document.getElementById('ldLikeCount'),de=document.getElementById('ldDislikeCount');if(le)le.textContent=lc>0?fmtCount(lc):'';if(de)de.textContent=dc>0?fmtCount(dc):'';}catch(e){}}
+  function fmtCount(n){return n>=1000?(n/1000).toFixed(1)+'K':String(n);}
+  function refreshLikeUI(){document.getElementById('ldLikeBtn')?.classList.toggle('liked',likeState==='like');document.getElementById('ldDislikeBtn')?.classList.toggle('disliked',likeState==='dislike');}
+  window.toggleLike=async(type)=>{
+    if(!currentUser){showToast('Login to react');return;}
+    const docId=`${currentUser.uid}_${currentAnimeId}_${currentEpKey}`,epDocId=`${currentAnimeId}_${currentEpKey}`;
+    const ref=db.collection('ep_reactions').doc(docId);
+    const btn=document.getElementById(type==='like'?'ldLikeBtn':'ldDislikeBtn');
+    const ac=type==='like'?'anim-like':'anim-dislike';
+    if(btn){btn.classList.add(ac);setTimeout(()=>btn.classList.remove(ac),500);}
+    if(likeState===type){likeState=null;try{await ref.delete();await db.collection('ep_counts').doc(epDocId).set({[type]:firebase.firestore.FieldValue.increment(-1)},{merge:true});}catch(e){}}
+    else{const prev=likeState;likeState=type;try{await ref.set({type,uid:currentUser.uid,ts:firebase.firestore.FieldValue.serverTimestamp()});const upd={[type]:firebase.firestore.FieldValue.increment(1)};if(prev)upd[prev]=firebase.firestore.FieldValue.increment(-1);await db.collection('ep_counts').doc(epDocId).set(upd,{merge:true});}catch(e){}}
+    refreshLikeUI();loadLikeCounts();
+  };
+
+  /* ════ SHARE ════ */
+  window.shareEpisode=async()=>{
+    const url=window.location.href,title=document.title||'Anime Verse';
+    if(navigator.share){try{await navigator.share({title,url});return;}catch(e){}}
+    try{await navigator.clipboard.writeText(url);showToast('Link copied!');}
+    catch(e){const el=document.createElement('textarea');el.value=url;el.style.cssText='position:fixed;opacity:0';document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);showToast('Link copied!');}
+  };
+
+  /* ════ COMMENTS ════ */
+  async function loadComments(){
+    const container=document.getElementById('commentsList');if(!container)return;
+    container.innerHTML='<div class="comments-loading"><i class="fas fa-circle-notch fa-spin"></i></div>';
+    const fullKey=`${currentAnimeId}_${currentEpKey}`;
+    let docs=[];
+    try{const snap=await db.collection('ep_comments').where('epKey','==',fullKey).orderBy('ts','desc').limit(60).get();snap.forEach(d=>docs.push({id:d.id,...d.data()}));}
+    catch(e){try{const snap2=await db.collection('ep_comments').where('epKey','==',fullKey).get();snap2.forEach(d=>docs.push({id:d.id,...d.data()}));docs.sort((a,b)=>(b.ts?.seconds||0)-(a.ts?.seconds||0));}
+    catch(e2){container.innerHTML='<div class="comments-empty">Could not load comments.</div>';return;}}
+    const badge=document.getElementById('commentCountBadge');
+    if(badge){badge.textContent=docs.length||'';badge.style.display=docs.length?'inline':'none';}
+    if(!docs.length){container.innerHTML=`<div class="comments-empty"><i class="fas fa-comment-dots" style="font-size:26px;opacity:0.25;display:block;margin-bottom:8px"></i>No comments yet. Be the first!</div>`;return;}
+    container.innerHTML='';
+    docs.forEach(d=>container.appendChild(buildCommentEl(d.id,d)));
+  }
+  function buildCommentEl(docId,d){
+    const div=document.createElement('div');div.className='comment-item';div.dataset.id=docId;
+    const isOwn=currentUser&&currentUser.uid===d.uid,ini=(d.name||'U')[0].toUpperCase();
+    let ts='';
+    if(d.ts?.toDate){const dt=d.ts.toDate(),now=new Date(),diff=now-dt;if(diff<60000)ts='just now';else if(diff<3600000)ts=Math.floor(diff/60000)+'m ago';else if(diff<86400000)ts=Math.floor(diff/3600000)+'h ago';else ts=dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});}
+    div.innerHTML=`<div class="comment-item-av">${d.avatar?`<img src="${d.avatar}" onerror="this.parentElement.textContent='${ini}'"/>`:ini}</div><div class="comment-body"><div class="comment-meta"><span class="comment-name">${escHtml(d.name||'User')}</span><span class="comment-time">${ts}</span></div><div class="comment-text">${escHtml(d.text||'')}</div></div>${isOwn?`<button class="comment-del" onclick="deleteComment('${docId}',this)"><i class="fas fa-trash-can"></i></button>`:''}`;
+    return div;
+  }
+  window.postComment=async()=>{
+    if(!currentUser){showToast('Login to comment');return;}
+    const ta=document.getElementById('commentTextarea'),text=ta?.value?.trim()||'';if(!text){showToast('Write something first!');return;}
+    const btn=document.getElementById('commentPostBtn');if(btn){btn.disabled=true;btn.innerHTML='<i class="fas fa-circle-notch fa-spin"></i>';}
+    let avatar='',name=currentUser.displayName||'User';
+    try{const u=await db.collection('users').doc(currentUser.uid).get();if(u.exists){avatar=u.data().photoURL||'';name=u.data().name||name;}}catch(e){}
+    let ok=false;
+    for(let i=0;i<3;i++){try{await db.collection('ep_comments').add({epKey:`${currentAnimeId}_${currentEpKey}`,uid:currentUser.uid,name,avatar,text,ts:firebase.firestore.FieldValue.serverTimestamp()});ok=true;break;}catch(e){if(i<2)await new Promise(r=>setTimeout(r,700*(i+1)));else showToast('Failed: '+e.message);}}
+    if(ok){if(ta)ta.value='';if(btn){btn.disabled=false;btn.textContent='Post';}setTimeout(()=>loadComments(),800);}
+    else{if(btn){btn.disabled=false;btn.textContent='Post';}}
+  };
+  window.deleteComment=async(docId,btnEl)=>{
+    if(!currentUser||!confirm('Delete this comment?'))return;
+    try{await db.collection('ep_comments').doc(docId).delete();btnEl?.closest('.comment-item')?.remove();const list=document.getElementById('commentsList');if(list&&!list.children.length)list.innerHTML='<div class="comments-empty">No comments yet.</div>';}
+    catch(e){showToast('Could not delete');}
+  };
+
+  /* ════ EPISODE SELECTOR ════ */
+  window.openSelector=()=>{if(!globalAnime)return;document.getElementById('epSelPage')?.classList.add('open');document.getElementById('epSelTitle').textContent=globalAnime.title;buildSelectorSeasons(globalAnime.seasons||[]);};
+  window.closeSelector=()=>document.getElementById('epSelPage')?.classList.remove('open');
+  function buildSelectorSeasons(seasons){
+    const rail=document.getElementById('epSeasonRail');
+    rail.innerHTML=seasons.map((s,i)=>`<button class="ep-season-btn${i===0?' active':''}" onclick="selectSeason(${s.id},this)">${s.title}<br/><span style="font-size:10px;opacity:0.6">${(s.episodes||[]).length} ep</span></button>`).join('');
+    if(seasons.length>0)selectSeason(seasons[0].id,rail.querySelector('.ep-season-btn'));
+  }
+  window.selectSeason=(sid,el)=>{
+    document.querySelectorAll('.ep-season-btn').forEach(b=>b.classList.remove('active'));el?.classList.add('active');
+    const season=(globalAnime?.seasons||[]).find(s=>s.id===sid),area=document.getElementById('epNumArea');if(!season||!area)return;
+    const eps=season.episodes||[];
+    if(!eps.length){area.innerHTML='<div style="text-align:center;padding:30px;color:var(--text2);font-size:13px;font-weight:600">No episodes yet.</div>';return;}
+    area.innerHTML=`<div style="font-size:12px;color:var(--text2);font-weight:700;margin-bottom:10px">${season.title} — ${eps.length} ep</div><div class="ep-num-grid">${eps.map(ep=>{const hasV=hasVideoContent(ep),hasTg=hasEpTg(ep),isCur=ep.id===currentEpId&&season.id===currentSeasonId,click=hasV||hasTg;let cls='ep-num-box';if(isCur)cls+=' current';else if(hasTg)cls+=' tg';else if(!hasV)cls+=' locked';return`<div class="${cls}" ${click&&!isCur?`onclick="goToEp('${globalAnimeId}',${season.id},${ep.id})"`:''}>ep ${ep.id}</div>`;}).join('')}</div>`;
+  };
+  window.goToEp=(aId,sid,eid)=>{closeSelector();window.location.href=`watch.html?id=${aId}&season=${sid}&ep=${eid}`;};
+
+  function buildEpTgBtns(ep){
+    if(ep.telegramUrl)return`<a href="${ep.telegramUrl}" target="_blank" rel="noopener" class="tg-btn-main"><i class="fab fa-telegram"></i> Watch on Telegram</a>`;
+    if(ep.telegramLinks){const keys=qualityOrder.filter(q=>ep.telegramLinks[q]);if(!keys.length)return'';return`<div class="tg-quality-row">${keys.map(q=>{const cfg=qualityConfig[q]||{label:q};return`<a href="${ep.telegramLinks[q]}" target="_blank" rel="noopener" class="tg-quality-btn"><i class="fab fa-telegram"></i>${cfg.label}</a>`;}).join('')}</div>`;}
+    return'';
+  }
+
+  /* ════ RENDER PLAYER PAGE ════ */
+  function renderPlayer(anime,season,episode,allEps,seasonId,animeId){
+    const hasVid=hasVideoContent(episode),hasTg=hasEpTg(episode);
+    const langs=getEpLangs(episode),langKeys=Object.keys(langs);
+    const defLang=langKeys.includes('Japanese')?'Japanese':(langKeys[0]||'');
+    const initLD=defLang?(langs[defLang]||{}):{};
+    const initBest=getBest(initLD);
+    const initQs=qualityOrder.filter(q=>initLD[q]&&initLD[q].trim());
+
+    const epTitle=`${anime.title} — ${season.title} — Ep ${episode.id}`;
+    vpVideoTitle=epTitle;
+    currentAnimeId=animeId;currentEpKey=`${seasonId}_${episode.id}`;likeState=null;
+
+    const langBtns=langKeys.map(l=>{const f=langFlags[l]||'🌐',s=JSON.stringify(langs[l]).replace(/"/g,'&quot;');return`<button class="lang-btn${l===defLang?' active':''}" data-lang="${l}" onclick="switchLanguage('${l}','${s}')">${f} ${l}</button>`;}).join('');
+    const langBtnsXp=langKeys.map(l=>{const f=langFlags[l]||'🌐',s=JSON.stringify(langs[l]).replace(/"/g,'&quot;');return`<button class="vp-s-btn${l===defLang?' active':''}" data-lang="${l}" onclick="switchLanguage('${l}','${s}')">${f} ${l}</button>`;}).join('');
+    const qualBtns=initQs.map(q=>{const cfg=qualityConfig[q]||{label:q,color:'#888'};return`<button class="quality-btn${q===initBest?' active':''}" data-quality="${q}" onclick="loadVideoUrl('${(initLD[q]||'').replace(/'/g,"\\'")}','${q}')" style="--qcolor:${cfg.color}">${cfg.label}</button>`;}).join('');
+    const qualBtnsXp=initQs.map(q=>{const cfg=qualityConfig[q]||{label:q,color:'#888'};return`<button class="vp-s-btn${q===initBest?' active':''}" data-quality="${q}" onclick="loadVideoUrl('${(initLD[q]||'').replace(/'/g,"\\'")}','${q}')">${cfg.label}</button>`;}).join('');
+
+    const idx=allEps.findIndex(e=>e.id===episode.id);
+    const prevEp=idx>0?allEps[idx-1]:null,nextEp=idx<allEps.length-1?allEps[idx+1]:null;
+    const prevBtn=prevEp?`<a href="watch.html?id=${animeId}&season=${seasonId}&ep=${prevEp.id}" class="btn-outline" style="text-decoration:none;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px"><i class="fas fa-backward-step"></i> Prev</a>`:`<button class="btn-outline" disabled style="opacity:0.35;font-size:13px"><i class="fas fa-backward-step"></i> Prev</button>`;
+    const nextBtn=nextEp?`<a href="watch.html?id=${animeId}&season=${seasonId}&ep=${nextEp.id}" class="btn-primary" style="text-decoration:none;font-size:13px;display:flex;align-items:center;justify-content:center;gap:6px">Next <i class="fas fa-forward-step"></i></a>`:`<button class="btn-primary" disabled style="opacity:0.35;font-size:13px">Next <i class="fas fa-forward-step"></i></button>`;
+
+    let playerHTML='',playerType='none';
+    if(hasVid&&initBest&&initLD[initBest]){
+      const url=initLD[initBest],type=getUrlType(url);playerType=type;
+      if(type==='direct'||type==='mkv')playerHTML=`<div id="playerSection">${buildDirectPlayer(url,epTitle,langKeys,initQs,langBtnsXp,qualBtnsXp)}</div>`;
+      else playerHTML=`<div id="playerSection">${buildIframePlayer(url,epTitle)}</div>`;
+    }else if(hasTg){
+      const thumb=episode.thumbnail||'';
+      playerHTML=`<div id="playerSection"><div class="tg-only-player">${thumb?`<div class="tg-only-bg" style="background-image:url('${thumb}')"></div>`:''}<div class="tg-only-inner"><i class="fab fa-telegram"></i><span>Watch on Telegram</span></div></div></div>`;
+    }else{
+      playerHTML=`<div id="playerSection"><div style="width:100%;aspect-ratio:16/9;background:#0d0d0d;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:rgba(255,255,255,0.25)"><i class="fas fa-film" style="font-size:38px"></i><span style="font-size:13px;font-family:'Poppins',sans-serif;font-weight:600">Video not available yet</span></div></div>`;
+    }
+
+    const hostingGuide=(!hasVid&&!hasTg)?`<div class="hosting-guide"><strong>📹 How to host your video</strong><b>Streamtape (recommended):</b> <a href="https://streamtape.com" target="_blank">streamtape.com</a> → Upload → Copy link → Paste in admin.<br/><b>YouTube Unlisted:</b> Upload → Set Unlisted → Copy link → Paste in admin.</div>`:'';
+
+    const commentInput=currentUser?`<div class="comment-input-wrap"><div class="comment-user-av" id="commentUserAv">${(currentUser.displayName||'U')[0].toUpperCase()}</div><div class="comment-textarea-wrap"><textarea class="comment-textarea" id="commentTextarea" placeholder="Write a comment..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();postComment()}" oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea><button class="comment-post-btn" id="commentPostBtn" onclick="postComment()">Post</button></div></div>`:`<div class="comment-login-prompt"><i class="fas fa-lock" style="font-size:16px;opacity:0.3;display:block;margin-bottom:6px"></i><a href="index.html" style="color:var(--accent);font-weight:800;text-decoration:none">Login</a> to leave a comment</div>`;
+
+    document.getElementById('watchMain').innerHTML=`
+      ${playerHTML}
+      ${hostingGuide}
+      <div style="padding:0 14px">
+        <div class="ld-wrap">
+          <div class="ld-bar">
+            <button class="ld-btn" id="ldLikeBtn" onclick="toggleLike('like')">
+              <i class="fas fa-thumbs-up"></i>
+              <span class="ld-count" id="ldLikeCount"></span>
+            </button>
+            <div class="ld-sep"></div>
+            <button class="ld-btn" id="ldDislikeBtn" onclick="toggleLike('dislike')">
+              <i class="fas fa-thumbs-down"></i>
+              <span class="ld-count" id="ldDislikeCount"></span>
+            </button>
+          </div>
+          <button class="ld-share-btn" onclick="shareEpisode()">
+            <i class="fas fa-share-nodes"></i><span>Share</span>
+          </button>
+          <button class="ep-inline-btn" onclick="openSelector()">
+            <i class="fas fa-list" style="color:var(--accent)"></i><span>Episodes</span>
+          </button>
+        </div>
+
+        <div class="comment-section">
+          <div class="comment-head">
+            <i class="fas fa-comments" style="color:var(--accent)"></i>
+            <span class="comment-head-title">Comments</span>
+            <span class="comment-count-badge" id="commentCountBadge"></span>
+          </div>
+          ${commentInput}
+          <div class="comment-list" id="commentsList">
+            <div class="comments-loading"><i class="fas fa-circle-notch fa-spin"></i></div>
+          </div>
+        </div>
+
+        <div style="padding:12px 0 4px">
+          <div class="watch-label">${escHtml(anime.title)} · ${escHtml(season.title)}</div>
+          <div class="watch-title">Ep ${episode.id}: ${escHtml(episode.title||'Episode '+episode.id)}</div>
+          <div class="watch-chips">
+            ${episode.duration?`<span class="watch-chip"><i class="fas fa-clock"></i>${episode.duration}</span>`:''}
+            ${langKeys.length>0?`<span class="watch-chip"><i class="fas fa-language"></i>${langKeys.length} lang${langKeys.length>1?'s':''}</span>`:''}
+            ${hasTg?`<span class="watch-chip" style="color:#2ca5e0;border-color:rgba(44,165,224,0.3)"><i class="fab fa-telegram" style="color:#2ca5e0"></i>Telegram</span>`:''}
+          </div>
+          ${episode.description?`<p class="watch-desc">${escHtml(episode.description)}</p>`:''}
+        </div>
+
+        ${hasVid&&(langKeys.length>0||initQs.length>1)?`<div class="lq-box">${langKeys.length>0?`<div class="lq-row"><span class="lq-label"><i class="fas fa-language"></i> Lang</span><div class="lang-btns">${langBtns}</div></div>`:''}${initQs.length>0?`<div class="lq-row"><span class="lq-label"><i class="fas fa-sliders"></i> Quality</span><div class="quality-btns" id="qualityBtnsContainer">${qualBtns}</div></div>`:''}</div>`:''}
+
+        ${hasTg?`<div class="tg-box"><div class="tg-box-head"><div class="tg-circle"><i class="fab fa-telegram"></i></div><div class="tg-box-title">${hasVid?'Also on Telegram':'Watch on Telegram'}</div></div>${buildEpTgBtns(episode)}</div>`:''}
+
+        <div class="ep-nav">${prevBtn}<a href="anime.html?id=${animeId}" class="btn-outline" style="font-size:13px;text-decoration:none;display:flex;align-items:center;justify-content:center"><i class="fas fa-info-circle"></i></a>${nextBtn}</div>
+      </div>`;
+
+    if(hasVid&&initBest&&initLD[initBest]&&(playerType==='direct'||playerType==='mkv'))setTimeout(initPlayerEvents,100);
+
+    if(currentUser){db.collection('users').doc(currentUser.uid).get().then(doc=>{const av=document.getElementById('commentUserAv');if(!av)return;const d=doc.exists?doc.data():{},pic=d.photoURL||'',nm=d.name||currentUser.displayName||'U';av.innerHTML=pic?`<img src="${pic}" onerror="this.parentElement.textContent='${nm[0].toUpperCase()}'"/>`:nm[0].toUpperCase();}).catch(()=>{});}
+
+    loadLikeCounts();initLikeDislike();loadComments();
+  }
+
+  /* ════ INIT ════ */
+  const params=new URLSearchParams(window.location.search);
+  const animeId=params.get('id');
+  const seasonId=parseInt(params.get('season'));
+  const epId=parseInt(params.get('ep'));
+  currentSeasonId=seasonId;currentEpId=epId;globalAnimeId=animeId;
+
+  db.collection('anime').doc(animeId).get().then(doc=>{
+    if(!doc.exists){document.getElementById('watchMain').innerHTML=`<div class="empty-state" style="min-height:60vh"><i class="fas fa-exclamation-circle"></i><h2>Anime not found!</h2><p><a href="index.html" style="color:var(--accent)">Go home</a></p></div>`;return;}
+    const anime={...doc.data(),firestoreId:doc.id};globalAnime=anime;
+    const season=(anime.seasons||[]).find(s=>s.id===seasonId);
+    const episode=season&&(season.episodes||[]).find(e=>e.id===epId);
+    if(!season||!episode){document.getElementById('watchMain').innerHTML=`<div class="empty-state" style="min-height:60vh"><i class="fas fa-film"></i><h2>Episode not found!</h2><p><a href="anime.html?id=${animeId}" style="color:var(--accent)">Back</a></p></div>`;return;}
+    document.title=`Ep ${episode.id}: ${episode.title||''} — ${anime.title}`;
+    renderPlayer(anime,season,episode,season.episodes,seasonId,animeId);
+  }).catch(err=>{
+    document.getElementById('watchMain').innerHTML=`<div class="empty-state" style="min-height:60vh"><i class="fas fa-wifi" style="opacity:0.4"></i><h2>Failed to load</h2><p style="color:var(--text2);font-size:13px">${err.message}</p><button onclick="location.reload()" style="margin-top:12px;background:var(--accent);color:#fff;border:none;border-radius:8px;padding:10px 22px;font-family:'Poppins',sans-serif;font-weight:800;cursor:pointer">Retry</button></div>`;
+  });
+  </script>
+</body>
+</html>

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>A-Z Index — Anime Verse</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    :root[data-theme="dark"] {
+      --bg:#000F08; --bg2:#071410; --bg3:#0E1F18;
+      --text:#F0F0F0; --text2:#9AADA5;
+      --accent:#FB3640; --btn-3d:#8B1017;
+      --border:#1A3025; --card:#0A1A10;
+      --shadow:rgba(0,0,0,0.72);
+      --header:rgba(0,15,8,0.97);
+    }
+    :root[data-theme="light"] {
+      --bg:#F7F7FF; --bg2:#EDEDFC; --bg3:#E0E0F8;
+      --text:#27187E; --text2:#5040A0;
+      --accent:#27187E; --btn-3d:#1D1268;
+      --border:#C5C5E8; --card:#F0F0FB;
+      --shadow:rgba(39,24,126,0.14);
+      --header:rgba(247,247,255,0.97);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;animation:pageIn .5s ease-out both}
+
+    @keyframes pageIn{from{opacity:0}to{opacity:1}}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes popIn{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes pulseGlow{
+      0%,100%{box-shadow:0 8px 24px rgba(251,54,64,0.35)}
+      50%{box-shadow:0 8px 36px rgba(251,54,64,0.65)}
+    }
+
+    /* Header */
+    .az-header{
+      position:sticky;top:0;z-index:100;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:12px 16px;
+      background:var(--header);backdrop-filter:blur(10px);
+      border-bottom:2px solid var(--accent);
+      animation:fadeUp .5s ease-out both;
+    }
+    .az-logo{font-family:'Bebas Neue',cursive;font-size:22px;letter-spacing:2px;color:var(--text);text-decoration:none}
+    .az-logo span{color:var(--accent)}
+    .az-header-right{display:flex;gap:8px}
+    .az-icon-btn{
+      width:38px;height:38px;border-radius:8px;
+      background:var(--bg3);border:1.5px solid var(--border);
+      color:var(--text);font-size:16px;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;
+      box-shadow:0 3px 0 var(--btn-3d);transition:all 0.18s ease;
+      text-decoration:none;
+    }
+    .az-icon-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-2px) scale(1.05)}
+    .az-icon-btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--btn-3d)}
+
+    /* Hero */
+    .az-hero{text-align:center;padding:28px 20px 20px;animation:fadeUp .6s ease-out both;animation-delay:.05s}
+    .az-hero-icon{
+      width:72px;height:72px;border-radius:20px;
+      background:var(--accent);
+      display:flex;align-items:center;justify-content:center;
+      font-size:30px;color:#fff;margin:0 auto 16px;
+      animation:pulseGlow 2.4s ease-in-out infinite, float 3.5s ease-in-out infinite;
+    }
+    :root[data-theme="light"] .az-hero-icon{animation:float 3.5s ease-in-out infinite;box-shadow:0 8px 24px rgba(39,24,126,0.3)}
+    .az-hero h1{font-family:'Bebas Neue',cursive;font-size:36px;letter-spacing:3px;color:var(--text);margin-bottom:6px}
+    .az-hero p{font-size:13px;color:var(--text2);font-weight:500}
+
+    /* Letter bar */
+    .az-letter-bar{
+      display:grid;grid-template-columns:repeat(9,1fr);
+      gap:6px;padding:16px;max-width:600px;margin:0 auto;
+    }
+    .az-letter-btn{
+      aspect-ratio:1;border-radius:8px;
+      background:var(--bg3);border:1.5px solid var(--border);
+      color:var(--text2);font-size:13px;font-weight:800;
+      cursor:pointer;transition:all 0.18s cubic-bezier(.4,0,.2,1);
+      font-family:'Poppins',sans-serif;
+      display:flex;align-items:center;justify-content:center;
+      box-shadow:0 3px 0 var(--btn-3d);
+      animation:popIn .35s ease-out both;
+    }
+    .az-letter-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-3px) scale(1.08);box-shadow:0 6px 0 var(--btn-3d)}
+    .az-letter-btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--btn-3d)}
+    .az-letter-btn.active{
+      background:var(--accent);color:#fff;border-color:var(--accent);
+      box-shadow:0 3px 0 var(--btn-3d);
+      transform:scale(1.05);
+    }
+
+    /* Search */
+    .az-search-wrap{
+      display:flex;align-items:center;gap:10px;
+      padding:0 16px 16px;max-width:600px;margin:0 auto;
+      animation:fadeUp .5s ease-out both;animation-delay:.15s;
+    }
+    .az-search-wrap i{color:var(--text2);font-size:16px}
+    .az-search{
+      flex:1;padding:11px 14px;
+      background:var(--bg3);border:1.5px solid var(--border);
+      border-radius:10px;color:var(--text);
+      font-family:'Poppins',sans-serif;font-size:14px;font-weight:600;
+      outline:none;transition:all .25s ease;
+    }
+    .az-search:focus{border-color:var(--accent);box-shadow:0 0 0 4px rgba(251,54,64,.15)}
+    :root[data-theme="light"] .az-search:focus{box-shadow:0 0 0 4px rgba(39,24,126,.15)}
+
+    /* Results header */
+    .az-results-header{
+      display:flex;align-items:center;justify-content:space-between;
+      padding:0 16px 10px;max-width:600px;margin:0 auto;
+      animation:fadeUp .35s ease-out both;
+    }
+    .az-result-letter{
+      font-size:48px;font-weight:900;color:var(--accent);
+      font-family:'Bebas Neue',cursive;line-height:1;
+    }
+    .az-result-count{font-size:13px;color:var(--text2);font-weight:600}
+
+    /* Grid */
+    .az-grid{
+      display:grid;grid-template-columns:repeat(2,1fr);
+      gap:12px;padding:0 16px;max-width:600px;margin:0 auto;
+    }
+
+    /* Card */
+    .az-card{
+      background:var(--card);border:1.5px solid var(--border);
+      border-radius:12px;overflow:hidden;cursor:pointer;
+      box-shadow:0 4px 0 var(--btn-3d),0 6px 14px var(--shadow);
+      transition:all 0.2s cubic-bezier(.4,0,.2,1);
+      text-decoration:none;display:block;
+      animation:fadeUp .45s ease-out both;
+    }
+    .az-card:hover{transform:translateY(-6px) scale(1.02);border-color:var(--accent);box-shadow:0 10px 0 var(--btn-3d),0 14px 28px var(--shadow)}
+    .az-card:active{transform:translateY(2px);box-shadow:0 2px 0 var(--btn-3d)}
+    .az-card-img{width:100%;aspect-ratio:16/10;object-fit:cover;display:block;background:var(--bg3);transition:transform .4s ease}
+    .az-card:hover .az-card-img{transform:scale(1.06)}
+    .az-card-body{
+      padding:8px 9px 10px;
+      background:linear-gradient(135deg,#030908,#0e1f18,#FB3640,#0e1f18,#030908);
+      background-size:400% 400%;animation:cardShine 4s ease infinite;
+    }
+    :root[data-theme="light"] .az-card-body{
+      background:linear-gradient(135deg,#0D0A4A,#27187E,#758BFD,#27187E,#0D0A4A);
+      background-size:400% 400%;animation:cardShine 4s ease infinite;
+    }
+    @keyframes cardShine{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+    .az-card-badge{
+      display:inline-block;background:rgba(255,255,255,0.2);color:#fff;
+      font-size:9px;font-weight:800;padding:2px 8px;border-radius:3px;
+      letter-spacing:1px;margin-bottom:5px;text-transform:uppercase;
+    }
+    .az-card-title{font-size:12px;font-weight:800;color:#fff;line-height:1.3;margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;height:2.6em}
+    .az-card-meta{display:flex;align-items:center;justify-content:space-between}
+    .az-card-rating{font-size:11px;font-weight:700;color:#ffd700;display:flex;align-items:center;gap:4px}
+    .az-card-year{font-size:10px;color:rgba(255,255,255,0.65);font-weight:600}
+
+    /* State message */
+    .az-state{
+      text-align:center;padding:48px 20px;
+      color:var(--text2);font-size:14px;font-weight:600;
+      max-width:600px;margin:0 auto;
+      animation:fadeUp .4s ease-out both;
+    }
+    .az-state i{font-size:40px;opacity:0.3;display:block;margin-bottom:14px;color:var(--text2)}
+
+    /* Pagination */
+    .az-pagination{
+      display:flex;justify-content:center;flex-wrap:wrap;
+      gap:8px;padding:16px;max-width:600px;margin:0 auto 24px;
+    }
+    .az-page-btn{
+      min-width:38px;height:38px;padding:0 8px;border-radius:8px;
+      background:var(--bg3);border:1.5px solid var(--border);
+      color:var(--text2);font-family:'Poppins',sans-serif;
+      font-size:13px;font-weight:800;cursor:pointer;
+      box-shadow:0 3px 0 var(--btn-3d);transition:all 0.18s ease;
+    }
+    .az-page-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-2px)}
+    .az-page-btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--btn-3d)}
+    .az-page-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);transform:scale(1.05)}
+
+    .fa-spin{animation:spin 0.8s linear infinite}
+  </style>
+</head>
+<body>
+
+<header class="az-header">
+  <a href="index.html" class="az-logo">ANIME <span>VERSE</span></a>
+  <div class="az-header-right">
+    <button class="az-icon-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle theme">
+      <i class="fas fa-moon"></i>
+    </button>
+    <a href="index.html" class="az-icon-btn" title="Home">
+      <i class="fas fa-house"></i>
+    </a>
+  </div>
+</header>
+
+<!-- Hero -->
+<div class="az-hero">
+  <div class="az-hero-icon"><i class="fas fa-arrow-down-a-z"></i></div>
+  <h1>A-Z Index</h1>
+  <p>Browse all content alphabetically</p>
+</div>
+
+<!-- Letter bar -->
+<div class="az-letter-bar" id="letterBar"></div>
+
+<!-- Search -->
+<div class="az-search-wrap">
+  <i class="fas fa-magnifying-glass"></i>
+  <input class="az-search" id="azSearch" type="text"
+    placeholder="Search by letter or type a name..."
+    oninput="onSearchInput(this.value)"/>
+</div>
+
+<!-- Results header -->
+<div class="az-results-header" id="resultsHeader" style="display:none">
+  <div class="az-result-letter" id="resultsLetter"></div>
+  <div class="az-result-count" id="resultsCount"></div>
+</div>
+
+<!-- Grid -->
+<div class="az-grid" id="resultsGrid"></div>
+
+<!-- State message -->
+<div class="az-state" id="stateMsg">
+  <i class="fas fa-arrow-up-a-z"></i>
+  Pick a letter or type to search
+</div>
+
+<!-- Pagination -->
+<div class="az-pagination" id="pagination"></div>
+
+
+<!-- Firebase (auth-compat added so firebase-config.js doesn't throw) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="firebase-config.js"></script>
+
+<script>
+// ── Theme ──
+function loadTheme() {
+  const s = localStorage.getItem('av_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', s);
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.innerHTML = s === 'dark'
+    ? '<i class="fas fa-moon"></i>'
+    : '<i class="fas fa-sun"></i>';
+}
+function toggleTheme() {
+  const cur  = document.documentElement.getAttribute('data-theme');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('av_theme', next);
+  const btn = document.getElementById('themeBtn');
+  if (btn) btn.innerHTML = next === 'dark'
+    ? '<i class="fas fa-moon"></i>'
+    : '<i class="fas fa-sun"></i>';
+}
+loadTheme();
+
+// ── State ──
+const LETTERS = '#ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const PAGE_SIZE = 20;
+let allAnime      = [];
+let filtered      = [];
+let currentLetter = '';
+let currentPage   = 1;
+let dataLoaded    = false;
+let dataLoading   = false;
+
+// ── Build letter bar (with stagger) ──
+(function buildLetterBar() {
+  const bar = document.getElementById('letterBar');
+  if (!bar) return;
+  LETTERS.forEach((l, i) => {
+    const btn = document.createElement('button');
+    btn.className   = 'az-letter-btn';
+    btn.id          = 'lbtn-' + l;
+    btn.textContent = l;
+    btn.style.animationDelay = (i * 0.018) + 's';
+    btn.onclick     = () => selectLetter(l);
+    bar.appendChild(btn);
+  });
+})();
+
+// ── Lazy fetch ──
+async function ensureData() {
+  if (dataLoaded) return true;
+  if (dataLoading) {
+    await new Promise(res => {
+      const t = setInterval(() => {
+        if (!dataLoading) { clearInterval(t); res(); }
+      }, 80);
+    });
+    return dataLoaded;
+  }
+  if (typeof db === 'undefined') {
+    setState('<i class="fas fa-triangle-exclamation"></i>',
+      'Firebase failed to initialize. Check firebase-config.js.');
+    return false;
+  }
+  dataLoading = true;
+  setState('<i class="fas fa-circle-notch fa-spin"></i>', 'Loading content...');
+  try {
+    const snap = await db.collection('anime').get();
+    allAnime = [];
+    snap.forEach(doc => {
+      const d = doc.data();
+      if (d.published !== false) allAnime.push({ ...d, firestoreId: doc.id });
+    });
+    allAnime.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+    dataLoaded  = true;
+    dataLoading = false;
+    return true;
+  } catch(e) {
+    console.error(e);
+    dataLoading = false;
+    setState('<i class="fas fa-triangle-exclamation"></i>',
+      'Failed to load. Check your internet and try again.');
+    return false;
+  }
+}
+
+// ── Filter by first-letter only ──
+function filterByLetter(letter) {
+  return allAnime.filter(a => {
+    const first = (a.title || '').trim()[0]?.toUpperCase();
+    if (letter === '#') return first && !/[A-Z]/.test(first);
+    return first === letter;
+  });
+}
+
+// ── Select letter ──
+async function selectLetter(letter) {
+  const ok = await ensureData();
+  if (!ok) return;
+  currentLetter = letter;
+  currentPage   = 1;
+  document.getElementById('azSearch').value = '';
+  document.querySelectorAll('.az-letter-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('lbtn-' + letter);
+  if (btn) btn.classList.add('active');
+  filtered = filterByLetter(letter);
+  showResults();
+}
+
+// ── Search: only the FIRST letter of typed text is used ──
+async function onSearchInput(val) {
+  const raw = (val || '').trim();
+  if (!raw) {
+    document.querySelectorAll('.az-letter-btn').forEach(b => b.classList.remove('active'));
+    currentLetter = '';
+    clearResults();
+    return;
+  }
+  const ok = await ensureData();
+  if (!ok) return;
+
+  const firstChar = raw[0].toUpperCase();
+  const letter = /[A-Z]/.test(firstChar) ? firstChar : '#';
+
+  currentLetter = letter;
+  currentPage = 1;
+
+  document.querySelectorAll('.az-letter-btn').forEach(b => b.classList.remove('active'));
+  const lb = document.getElementById('lbtn-' + letter);
+  if (lb) lb.classList.add('active');
+
+  filtered = filterByLetter(letter);
+  showResults(letter);
+}
+
+// ── Show results ──
+function showResults(label) {
+  const grid    = document.getElementById('resultsGrid');
+  const header  = document.getElementById('resultsHeader');
+  const letterEl= document.getElementById('resultsLetter');
+  const countEl = document.getElementById('resultsCount');
+
+  document.getElementById('stateMsg').style.display = 'none';
+
+  if (!filtered.length) {
+    grid.innerHTML = '';
+    header.style.display = 'none';
+    document.getElementById('pagination').innerHTML = '';
+    setState('<i class="fas fa-face-sad-tear"></i>', 'No content found');
+    return;
+  }
+
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const safeP = Math.min(Math.max(1, currentPage), totalPages);
+  const start = (safeP - 1) * PAGE_SIZE;
+  const slice = filtered.slice(start, start + PAGE_SIZE);
+
+  header.style.display = 'flex';
+  letterEl.textContent = label || currentLetter || '';
+  letterEl.style.fontSize = '';
+  countEl.textContent = `${filtered.length} result${filtered.length !== 1 ? 's' : ''} · Page ${safeP}/${totalPages}`;
+
+  grid.innerHTML = '';
+  slice.forEach((anime, i) => {
+    const a = document.createElement('a');
+    a.className = 'az-card';
+    a.href = `anime.html?id=${anime.firestoreId}`;
+    a.style.animationDelay = (i * 0.04) + 's';
+    const img = anime.banner || anime.thumbnail || '';
+    a.innerHTML = `
+      <img class="az-card-img" src="${img}" alt="${(anime.title||'').replace(/"/g,'&quot;')}"
+        onerror="this.style.background='var(--bg3)'"/>
+      <div class="az-card-body">
+        <span class="az-card-badge">${(anime.type || 'ANIME').toUpperCase()}</span>
+        <div class="az-card-title">${anime.title || ''}</div>
+        <div class="az-card-meta">
+          <span class="az-card-rating"><i class="fas fa-star"></i> ${anime.rating || 'N/A'}</span>
+          <span class="az-card-year">${anime.year || ''}</span>
+        </div>
+      </div>`;
+    grid.appendChild(a);
+  });
+
+  renderPagination(safeP, totalPages);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderPagination(current, total) {
+  const wrap = document.getElementById('pagination');
+  wrap.innerHTML = '';
+  if (total <= 1) return;
+  for (let p = 1; p <= total; p++) {
+    const btn = document.createElement('button');
+    btn.className = 'az-page-btn' + (p === current ? ' active' : '');
+    btn.textContent = p;
+    if (p !== current) {
+      btn.onclick = () => { currentPage = p; showResults(currentLetter); };
+    }
+    wrap.appendChild(btn);
+  }
+}
+
+function clearResults() {
+  document.getElementById('resultsGrid').innerHTML = '';
+  document.getElementById('resultsHeader').style.display = 'none';
+  document.getElementById('pagination').innerHTML = '';
+  setState('<i class="fas fa-arrow-up-a-z"></i>', 'Pick a letter or type to search');
+}
+
+function setState(iconHtml, msg) {
+  const el = document.getElementById('stateMsg');
+  el.innerHTML = `${iconHtml}<br/>${msg}`;
+  el.style.display = 'block';
+}
+</script>
+</body>
+</html>

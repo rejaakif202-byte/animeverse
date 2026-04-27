@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Anime Detail — Anime Verse</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    .parent-season-tabs {
+      display: flex; gap: 8px; overflow-x: auto;
+      padding: 14px 0 10px; scrollbar-width: none;
+    }
+    .parent-season-tabs::-webkit-scrollbar { display: none; }
+    .parent-season-tab {
+      flex-shrink: 0; background: var(--pill-bg); color: var(--pill-text);
+      border: 1.5px solid var(--border); padding: 9px 20px;
+      border-radius: 7px; font-size: 13px; font-weight: 800;
+      font-family: 'Poppins', sans-serif; cursor: pointer; transition: all 0.12s;
+      box-shadow: 0 3px 0 rgba(0,0,0,0.2);
+    }
+    .parent-season-tab:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-1px); }
+    .parent-season-tab:active { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.2); }
+    .parent-season-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    .season-banner-wrap {
+      display: none; position: relative; width: 100%;
+      overflow: hidden; border-radius: 12px; background: var(--bg3); margin-bottom: 10px;
+    }
+    .season-banner-wrap.visible { display: block; }
+    .season-banner-wrap img {
+      width: 100%; height: 160px; object-fit: cover;
+      display: block; filter: brightness(0.72);
+    }
+    .season-banner-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to bottom, transparent 35%, rgba(0,0,0,0.82) 100%);
+      display: flex; align-items: flex-end; padding: 14px 16px;
+    }
+    .season-banner-title {
+      font-size: 19px; font-weight: 800; color: #fff;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .sub-season-tabs {
+      display: none; gap: 7px; overflow-x: auto;
+      padding: 4px 0 12px; scrollbar-width: none;
+    }
+    .sub-season-tabs.visible { display: flex; }
+    .sub-season-tabs::-webkit-scrollbar { display: none; }
+    .sub-season-tab {
+      flex-shrink: 0; background: var(--bg3); color: var(--text2);
+      border: 1.5px solid var(--border);
+      padding: 8px 18px;
+      border-radius: 7px;   /* square, matches season tabs */
+      font-size: 12px; font-weight: 800; font-family: 'Poppins', sans-serif;
+      cursor: pointer; transition: all 0.14s;
+      /* 3D shadow */
+      box-shadow: 0 3px 0 rgba(0,0,0,0.2), 0 4px 8px rgba(0,0,0,0.1);
+      letter-spacing: 0.2px;
+    }
+    .sub-season-tab:hover {
+      border-color: var(--accent); color: var(--accent);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 0 rgba(0,0,0,0.2), 0 5px 10px rgba(0,0,0,0.12);
+    }
+    .sub-season-tab:active {
+      transform: translateY(2px);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+    }
+    .sub-season-tab.active {
+      background: var(--accent); color: #fff; border-color: var(--accent);
+      box-shadow: 0 3px 0 rgba(100,80,200,0.35), 0 4px 10px rgba(0,0,0,0.15);
+    }
+  </style>
+</head>
+<body>
+
+  <header class="header">
+    <div class="header-left">
+      <button class="icon-btn" onclick="history.back()">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <a href="index.html" class="logo">ANIME <span>VERSE</span></a>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn" id="themeBtn" onclick="toggleTheme()">
+        <i class="fas fa-moon"></i>
+      </button>
+    </div>
+  </header>
+
+  <main class="main" id="detailMain">
+    <div class="empty-state" style="min-height:60vh">
+      <i class="fas fa-circle-notch fa-spin"
+        style="font-size:40px;color:var(--accent)"></i>
+      <h2 style="margin-top:16px">Loading...</h2>
+    </div>
+  </main>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="data.js"></script>
+  <script>
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      const btn  = document.getElementById('themeBtn');
+      const dark = html.getAttribute('data-theme') === 'dark';
+      html.setAttribute('data-theme', dark ? 'light' : 'dark');
+      btn.innerHTML = dark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+      localStorage.setItem('av_theme', dark ? 'light' : 'dark');
+    }
+    function loadTheme() {
+      const saved = localStorage.getItem('av_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+      const btn = document.getElementById('themeBtn');
+      if (btn) btn.innerHTML = saved === 'dark'
+        ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
+    }
+
+    const qualityOrder  = ['4k','4K','1080p','1080','720p','720','480p','480','360p','hd','HD','sd','SD'];
+    const qualityConfig = {
+      '480p':  { label:'480p SD',   color:'#607d8b' },
+      '480':   { label:'480p SD',   color:'#607d8b' },
+      'sd':    { label:'SD',        color:'#607d8b' },
+      '720p':  { label:'720p HD',   color:'#2a6dd9' },
+      '720':   { label:'720p HD',   color:'#2a6dd9' },
+      'hd':    { label:'HD',        color:'#2a6dd9' },
+      '1080p': { label:'1080p FHD', color:'#27ae60' },
+      '1080':  { label:'1080p FHD', color:'#27ae60' },
+      'fhd':   { label:'FHD',       color:'#27ae60' },
+      '4k':    { label:'4K UHD',    color:'#C87740' },
+      '2160p': { label:'4K UHD',    color:'#C87740' },
+      '8k':    { label:'8K',        color:'#c0392b' },
+    };
+    // Normalize key lookup — handles "4K", "HD", "1080P" etc.
+    function getQualityCfg(q) {
+      const key = String(q).toLowerCase().trim();
+      return qualityConfig[key] || qualityConfig[q] || { label: q.toUpperCase(), color: '#9787F3' };
+    }
+
+    function showError(msg) {
+      document.getElementById('detailMain').innerHTML = `
+        <div class="empty-state" style="min-height:60vh">
+          <i class="fas fa-exclamation-circle" style="font-size:40px;color:#e50914"></i>
+          <h2 style="margin-top:16px">Oops!</h2>
+          <p style="color:var(--text2);font-size:13px;margin-top:8px">${msg}</p>
+          <a href="index.html" style="color:var(--accent);margin-top:16px;display:inline-block;font-size:14px">← Go Home</a>
+        </div>`;
+    }
+
+    async function getAnime(id) {
+      if (!id) return null;
+      try {
+        const doc = await db.collection('anime').doc(id).get({ source: 'server' });
+        if (doc.exists) return { ...doc.data(), firestoreId: doc.id };
+        const cached = await db.collection('anime').doc(id).get();
+        if (cached.exists) return { ...cached.data(), firestoreId: cached.id };
+        return null;
+      } catch(e) {
+        try {
+          const cached = await db.collection('anime').doc(id).get();
+          if (cached.exists) return { ...cached.data(), firestoreId: cached.id };
+        } catch(e2) {}
+        showError(e.message || 'Failed to load data from Firebase.');
+        return null;
+      }
+    }
+
+    async function toggleWatchlist(id) {
+      const user = auth.currentUser;
+      const btn  = document.getElementById('watchlistBtn');
+      if (user) {
+        const ref  = db.collection('users').doc(user.uid);
+        const doc  = await ref.get();
+        let list   = doc.exists ? (doc.data().watchlist || []) : [];
+        if (list.includes(id)) {
+          list = list.filter(x => x !== id);
+          btn.classList.remove('saved');
+          btn.innerHTML = '<i class="fas fa-heart"></i> Add to List';
+        } else {
+          list.push(id);
+          btn.classList.add('saved');
+          btn.innerHTML = '<i class="fas fa-heart"></i> Saved!';
+        }
+        await ref.update({ watchlist: list });
+      } else {
+        let list = JSON.parse(localStorage.getItem('av_mylist') || '[]');
+        if (list.includes(id)) {
+          list = list.filter(x => x !== id);
+          btn.classList.remove('saved');
+          btn.innerHTML = '<i class="fas fa-heart"></i> Add to List';
+        } else {
+          list.push(id);
+          btn.classList.add('saved');
+          btn.innerHTML = '<i class="fas fa-heart"></i> Saved!';
+        }
+        localStorage.setItem('av_mylist', JSON.stringify(list));
+      }
+    }
+
+    function getSeasonPacks(season) {
+      const packs = [];
+      if (season.telegramPacks && season.telegramPacks.length > 0) {
+        season.telegramPacks.forEach(p => {
+          if (p && (p.single || (p.links && Object.values(p.links).some(v => v))))
+            packs.push(p);
+        });
+        return packs;
+      }
+      if (season.telegramLinks && Object.values(season.telegramLinks).some(v => v && v.trim())) {
+        packs.push({ range: season.episodeRange || null, links: season.telegramLinks });
+        return packs;
+      }
+      if (season.telegramUrl && season.telegramUrl.trim()) {
+        packs.push({ range: season.episodeRange || null, single: season.telegramUrl });
+        return packs;
+      }
+      return packs;
+    }
+
+    function hasVideoContent(episode) {
+      if (!episode) return false;
+      const langs = episode.languages || {};
+      if (Object.values(langs).some(qm => qm && Object.values(qm).some(u => u && u.trim()))) return true;
+      if (episode.videoUrls && Object.values(episode.videoUrls).some(u => u && u.trim())) return true;
+      if (episode.videoUrl && episode.videoUrl.trim()) return true;
+      return false;
+    }
+
+    function hasEpisodeTelegram(episode) {
+      if (!episode) return false;
+      if (episode.telegramLinks && Object.values(episode.telegramLinks).some(v => v)) return true;
+      if (episode.telegramUrl && episode.telegramUrl.trim()) return true;
+      return false;
+    }
+
+    function buildSeasonPacksHTML(season) {
+      const packs = getSeasonPacks(season);
+      if (!packs.length) return '';
+      return packs.map((pack, idx) => {
+        const epCount = (season.episodes || []).length;
+        const range   = pack.range ? `Episodes ${pack.range}` : epCount > 0 ? `${epCount} Episodes` : 'Full Season';
+        let btnHTML = '';
+        if (pack.single) {
+          btnHTML = `<a href="${pack.single}" target="_blank" rel="noopener" class="season-tg-btn-main"><i class="fab fa-telegram"></i> Watch ${range} on Telegram</a>`;
+        } else if (pack.links) {
+          const allKeys = Object.keys(pack.links).filter(q => pack.links[q] && pack.links[q].trim());
+          const sortedKeys = allKeys.sort((a, b) => {
+            const idxA = qualityOrder.indexOf(a);
+            const idxB = qualityOrder.indexOf(b);
+            if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+            if (idxA !== -1) return -1;
+            if (idxB !== -1) return 1;
+            return a.localeCompare(b);
+          });
+          if (!sortedKeys.length) return '';
+          btnHTML = `<div class="season-tg-quality-row">${sortedKeys.map(q => {
+            const cfg = getQualityCfg(q);
+            return `<a href="${pack.links[q]}" target="_blank" rel="noopener" class="season-tg-quality-btn" style="--tgcolor:${cfg.color}"><i class="fab fa-telegram"></i> ${cfg.label}</a>`;
+          }).join('')}</div>`;
+        }
+        if (!btnHTML) return '';
+        return `
+          <div class="season-tg-pack" style="margin-top:10px">
+            <div class="season-tg-pack-header">
+              <div class="season-tg-pack-icon"><i class="fab fa-telegram"></i></div>
+              <div>
+                <div class="season-tg-pack-title">
+                  ${packs.length > 1 ? `Pack ${idx + 1}: ${range}` : `${season.title} — Telegram Pack`}
+                </div>
+                <div class="season-tg-pack-sub"><i class="fas fa-film" style="font-size:10px"></i> ${range} available</div>
+              </div>
+            </div>
+            ${btnHTML}
+          </div>`;
+      }).join('');
+    }
+
+    // ===== RENDER SEASON CONTENT =====
+    function renderSeasonContent(animeId, season) {
+      const container = document.getElementById('subSeasonContent');
+      if (!container) return;
+
+      const episodes  = season.episodes || [];
+      const packsHTML = buildSeasonPacksHTML(season);
+      const hasPacks  = packsHTML.trim().length > 0;
+
+      let episodesHTML = '';
+      if (episodes.length > 0) {
+        episodesHTML = `
+          <div class="episodes-section-title">
+            <i class="fas fa-play-circle" style="color:var(--accent);font-size:15px"></i>
+            Watch Episodes
+          </div>
+          <div class="episodes-list" id="episodesList"></div>`;
+      } else if (!hasPacks) {
+        episodesHTML = `
+          <div style="text-align:center;padding:30px 0;color:var(--text2);font-size:13px;font-weight:600">
+            No content added yet.
+          </div>`;
+      }
+
+      container.innerHTML = `${packsHTML}${episodesHTML}`;
+      if (episodes.length === 0) return;
+
+      const list = document.getElementById('episodesList');
+      if (!list) return;
+
+      episodes.forEach(ep => {
+        const hasVid    = hasVideoContent(ep);
+        const hasEpTg   = hasEpisodeTelegram(ep);
+        // ✅ FIX: episode is clickable if it has video, OR its own telegram link,
+        // OR a season pack exists (so user can go to watch.html and see TG pack)
+        const clickable = hasVid || hasEpTg || hasPacks;
+
+        let statusBadge = '';
+        if (hasVid) {
+          statusBadge = `<span style="font-size:10px;color:var(--accent);font-weight:700"><i class="fas fa-play-circle"></i> Watch</span>`;
+        } else if (hasEpTg) {
+          statusBadge = `<span style="font-size:10px;color:#2ca5e0;font-weight:700"><i class="fab fa-telegram"></i> Telegram</span>`;
+        } else if (hasPacks) {
+          statusBadge = `<span style="font-size:10px;color:#2ca5e0;font-weight:700"><i class="fab fa-telegram"></i> Season Pack</span>`;
+        } else {
+          statusBadge = `<span style="font-size:10px;color:#888;font-weight:600"><i class="fas fa-clock"></i> Coming soon</span>`;
+        }
+
+        let thumbIcon = '';
+        if (hasVid) {
+          thumbIcon = `<div class="ep-play-icon"><i class="fas fa-play"></i></div>`;
+        } else if (hasEpTg) {
+          thumbIcon = `<div class="ep-play-icon" style="background:rgba(44,165,224,0.7)"><i class="fab fa-telegram"></i></div>`;
+        } else if (hasPacks) {
+          thumbIcon = `<div class="ep-play-icon" style="background:rgba(44,165,224,0.3)"><i class="fab fa-telegram" style="font-size:14px"></i></div>`;
+        } else {
+          thumbIcon = `<div class="ep-play-icon" style="background:rgba(0,0,0,0.4);opacity:0.5"><i class="fas fa-lock" style="font-size:14px"></i></div>`;
+        }
+
+        const item = document.createElement('div');
+        item.className = 'episode-item';
+        item.style.cursor = clickable ? 'pointer' : 'default';
+        if (!clickable) item.style.opacity = '0.6';
+
+        item.innerHTML = `
+          <div class="ep-thumb" style="position:relative;overflow:hidden">
+            <img src="${ep.thumbnail || ''}" alt="Ep ${ep.id}"
+              style="width:100%;height:100%;object-fit:cover;border-radius:8px;background:var(--bg3);display:block"
+              onerror="this.style.background='var(--bg3)'"/>
+            ${thumbIcon}
+          </div>
+          <div class="ep-info">
+            <div class="ep-num">Episode ${ep.id}</div>
+            <div class="ep-title">${ep.title || 'Episode ' + ep.id}</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:3px;align-items:center">
+              ${ep.duration ? `<span class="ep-duration"><i class="fas fa-clock" style="font-size:9px"></i> ${ep.duration}</span>` : ''}
+              ${statusBadge}
+            </div>
+          </div>`;
+
+        if (clickable) {
+          item.addEventListener('click', () => {
+            window.location.href = `watch.html?id=${animeId}&season=${season.id}&ep=${ep.id}`;
+          });
+        }
+        list.appendChild(item);
+      });
+    }
+
+    function groupSeasons(seasons) {
+      const hasParentSystem = seasons.some(s => s.parentId != null && s.parentId !== undefined);
+      if (hasParentSystem) {
+        const parents = seasons.filter(s => s.parentId == null || s.parentId === undefined);
+        return parents.map(p => ({
+          ...p,
+          subSeasons: seasons.filter(s => s.parentId != null && String(s.parentId) === String(p.id))
+        }));
+      } else {
+        // Treat each legacy season as a standalone parent for UI consistency
+        return seasons.map(s => ({ ...s, subSeasons: [], _isStandalone: true }));
+      }
+    }
+
+    let groupedSeasons = [];
+
+    window.switchParentSeason = function(idx) {
+      document.querySelectorAll('.parent-season-tab').forEach((t, i) =>
+        t.classList.toggle('active', i === idx));
+      renderParentSeasonArea(window._animeId, groupedSeasons[idx]);
+    };
+
+    function renderParentSeasonArea(animeId, parent) {
+      const bannerWrap  = document.getElementById('seasonBannerWrap');
+      const bannerImg   = document.getElementById('seasonBannerImg');
+      const bannerLbl   = document.getElementById('seasonBannerLabel');
+      const subTabsWrap = document.getElementById('subSeasonTabsWrap');
+      const subContent  = document.getElementById('subSeasonContent');
+
+      if (!subTabsWrap || !subContent) return;
+
+      // Season poster banner (now works for legacy seasons too)
+      if (parent.poster && parent.poster.trim()) {
+        if (bannerImg) bannerImg.src = parent.poster;
+        if (bannerLbl) bannerLbl.textContent = parent.title;
+        if (bannerWrap) bannerWrap.classList.add('visible');
+      } else {
+        if (bannerWrap) bannerWrap.classList.remove('visible');
+      }
+
+      const subSeasons = parent.subSeasons || [];
+
+      if (subSeasons.length === 0) {
+        subTabsWrap.classList.remove('visible');
+        subTabsWrap.innerHTML = '';
+        renderSeasonContent(animeId, parent);
+        return;
+      }
+
+      // Sub-season tabs
+      subTabsWrap.classList.add('visible');
+      subTabsWrap.innerHTML = subSeasons.map((s, i) =>
+        `<button class="sub-season-tab ${i === 0 ? 'active' : ''}"
+          onclick="switchSubSeason('${animeId}', ${i})">
+          ${s.title}
+        </button>`
+      ).join('');
+
+      window._currentSubSeasons = subSeasons;
+      renderSeasonContent(animeId, subSeasons[0]);
+    }
+
+    window.switchSubSeason = function(animeId, idx) {
+      document.querySelectorAll('.sub-season-tab').forEach((t, i) =>
+        t.classList.toggle('active', i === idx));
+      renderSeasonContent(animeId, window._currentSubSeasons[idx]);
+    };
+
+    async function renderDetail(anime) {
+      const animeId = anime.firestoreId;
+      window._animeId = animeId;
+      const user    = auth.currentUser;
+      let isSaved   = false;
+
+      if (user) {
+        try {
+          const doc = await db.collection('users').doc(user.uid).get();
+          const wl  = doc.exists ? (doc.data().watchlist || []) : [];
+          isSaved   = wl.includes(animeId);
+        } catch(e) {}
+      } else {
+        const local = JSON.parse(localStorage.getItem('av_mylist') || '[]');
+        isSaved = local.includes(animeId);
+      }
+
+      const seasons = anime.seasons || [];
+      groupedSeasons = groupSeasons(seasons);
+
+      const topLevelCount = groupedSeasons.length;
+
+      let watchUrl = '#';
+      outer: for (const season of seasons) {
+        const eps = season.episodes || [];
+        for (const ep of eps) {
+          if (hasVideoContent(ep) || hasEpisodeTelegram(ep)) {
+            watchUrl = `watch.html?id=${animeId}&season=${season.id}&ep=${ep.id}`;
+            break outer;
+          }
+        }
+        const packs = getSeasonPacks(season);
+        if (packs.length > 0 && eps.length > 0) {
+          watchUrl = `watch.html?id=${animeId}&season=${season.id}&ep=${eps[0].id}`;
+          break;
+        }
+        if (eps.length > 0 && watchUrl === '#') {
+          watchUrl = `watch.html?id=${animeId}&season=${season.id}&ep=${eps[0].id}`;
+        }
+      }
+
+      const genres = (anime.genre || []).map(g => `<span class="genre-tag">${g}</span>`).join('');
+
+      const showParentTabs = seasons.length > 0;
+      const parentTabsHTML = showParentTabs
+        ? groupedSeasons.map((p, i) =>
+          `<button class="parent-season-tab ${i === 0 ? 'active' : ''}"
+            onclick="switchParentSeason(${i})">
+            ${p.title}
+          </button>`).join('')
+        : '';
+
+      document.getElementById('detailMain').innerHTML = `
+        <img class="anime-banner"
+          src="${anime.banner || anime.thumbnail || ''}"
+          alt="${anime.title}"
+          onerror="this.style.background='var(--bg3)'"/>
+
+        <div class="anime-detail-card">
+          <div class="anime-detail-top">
+            <img class="anime-poster"
+              src="${anime.thumbnail || ''}"
+              alt="${anime.title}"
+              onerror="this.style.background='var(--bg3)'"/>
+            <div class="anime-info">
+              <h1>${anime.title}</h1>
+              <p class="subtitle">${anime.studio || ''} · ${anime.year || ''}</p>
+              <div class="info-row" style="flex-wrap:nowrap;overflow:hidden">
+                <span class="info-chip rating" style="white-space:nowrap">
+                  <i class="fas fa-star"></i> ${anime.rating || 'N/A'}
+                </span>
+                <span class="info-chip" style="white-space:nowrap">
+                  <i class="fas fa-circle-dot"></i> ${anime.status || ''}
+                </span>
+                <span class="info-chip" style="white-space:nowrap">
+                  <i class="fas fa-layer-group"></i>
+                  ${topLevelCount} Season${topLevelCount !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <div class="genre-tags">${genres}</div>
+            </div>
+          </div>
+          <p class="anime-desc">${anime.description || ''}</p>
+          <div style="display:flex;align-items:center;justify-content:flex-end;margin:8px 0 10px">
+            <span class="view-badge" id="viewBadge" style="font-size:11px">
+              <i class="fas fa-eye"></i>&nbsp;<span id="viewCount">${anime.views || 0}</span> views
+            </span>
+          </div>
+          <div class="action-btns">
+            <a href="${watchUrl}" class="btn-primary"
+              style="text-decoration:none;${watchUrl === '#'
+                ? 'opacity:0.5;pointer-events:none' : ''}">
+              <i class="fas fa-play"></i> Watch Now
+            </a>
+            <button class="btn-outline ${isSaved ? 'saved' : ''}"
+              id="watchlistBtn"
+              onclick="toggleWatchlist('${animeId}')">
+              <i class="fas fa-heart"></i>
+              ${isSaved ? 'Saved!' : 'Add to List'}
+            </button>
+          </div>
+        </div>
+
+        ${seasons.length > 0 ? `
+        ${showParentTabs ? `<div class="parent-season-tabs">${parentTabsHTML}</div>` : ''}
+
+        <div class="season-banner-wrap" id="seasonBannerWrap">
+          <img id="seasonBannerImg" src="" alt="Season Poster"
+            onerror="this.closest('.season-banner-wrap').classList.remove('visible')"/>
+          <div class="season-banner-overlay">
+            <span class="season-banner-title" id="seasonBannerLabel"></span>
+          </div>
+        </div>
+
+        <div class="sub-season-tabs" id="subSeasonTabsWrap"></div>
+        <div id="subSeasonContent" style="margin-top:4px"></div>
+        ` : `
+        <p class="empty-msg" style="padding:30px 0;text-align:center">No seasons added yet.</p>
+        `}`;
+
+      if (seasons.length > 0 && groupedSeasons.length > 0) {
+        renderParentSeasonArea(animeId, groupedSeasons[0]);
+      }
+    }
+
+    loadTheme();
+    const params  = new URLSearchParams(window.location.search);
+    const animeId = params.get('id');
+
+    if (!animeId) {
+      showError('Anime ID not found. Please click on an anime from the home page.');
+    } else {
+      getAnime(animeId).then(anime => {
+        if (anime) {
+          document.title = `${anime.title} — Anime Verse`;
+          renderDetail(anime);
+          recordView(animeId);
+          loadRecommendations(anime);
+        } else {
+          showError('Anime not found or failed to load.');
+        }
+      });
+    }
+
+    // ===== RECOMMENDATIONS =====
+    async function loadRecommendations(currentAnime) {
+      try {
+        const snap = await db.collection('anime').get();
+        const all = [];
+        snap.forEach(doc => {
+          const d = doc.data();
+          if (d.published !== false && doc.id !== animeId && d.type === currentAnime.type)
+            all.push({...d, firestoreId: doc.id});
+        });
+
+        // Score by genre overlap
+        const currentGenres = new Set((currentAnime.genre || []).map(g => g.toLowerCase()));
+        all.forEach(a => {
+          const genres = (a.genre || []).map(g => g.toLowerCase());
+          a._score = genres.filter(g => currentGenres.has(g)).length;
+        });
+
+        // Sort: genre match first, then by rating
+        const recs = all
+          .sort((a, b) => b._score - a._score || (b.rating || 0) - (a.rating || 0))
+          .slice(0, 4);
+
+        if (recs.length === 0) return;
+
+        // Build UI
+        const wrap = document.createElement('div');
+        wrap.style.cssText = 'padding:20px 14px 32px;max-width:700px;margin:0 auto';
+        wrap.innerHTML = `
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+            <div style="width:32px;height:32px;background:var(--accent);border-radius:8px;
+              display:flex;align-items:center;justify-content:center;flex-shrink:0;
+              box-shadow:0 3px 0 var(--accent2)">
+              <i class="fas fa-thumbs-up" style="color:#fff;font-size:14px"></i>
+            </div>
+            <span style="font-size:16px;font-weight:800;color:var(--text)">You May Also Like</span>
+          </div>
+          <div id="recGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px"></div>`;
+
+        document.querySelector('.anime-detail-wrap') ?
+          document.querySelector('.anime-detail-wrap').after(wrap) :
+          document.body.appendChild(wrap);
+
+        const grid = wrap.querySelector('#recGrid');
+        recs.forEach((a, i) => {
+          const card = document.createElement('div');
+          card.style.cssText = `
+            background:var(--card-bg);border:1.5px solid var(--border);border-radius:10px;
+            overflow:hidden;cursor:pointer;
+            box-shadow:0 4px 0 var(--btn-3d),0 6px 14px var(--shadow);
+            transition:transform 0.15s,box-shadow 0.15s;
+            opacity:0;transform:translateY(16px);
+            animation:recIn 0.4s ease ${i*0.08}s forwards;
+            display:flex;flex-direction:column`;
+          card.innerHTML = `
+            <img src="${a.thumbnail||''}" alt="${a.title}"
+              style="width:100%;aspect-ratio:16/9;object-fit:cover;display:block;background:var(--bg3)"
+              onerror="this.style.background='var(--bg3)'"/>
+            <div style="padding:8px;flex:1;display:flex;flex-direction:column">
+              <span style="display:inline-block;background:var(--badge-bg);color:#fff;
+                font-size:8px;font-weight:800;padding:2px 7px;border-radius:4px;
+                letter-spacing:1px;text-transform:uppercase;margin-bottom:5px;align-self:flex-start">
+                ${a.type||'ANIME'}
+              </span>
+              <div style="font-size:12px;font-weight:700;color:var(--text);line-height:1.3;
+                display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+                overflow:hidden;height:2.6em;margin-bottom:4px">${a.title}</div>
+              <div style="display:flex;align-items:center;justify-content:space-between;
+                margin-top:auto;font-size:10px;color:var(--text2)">
+                <span style="color:#ffd700;font-weight:700">
+                  <i class="fas fa-star" style="font-size:9px"></i> ${a.rating||'N/A'}
+                </span>
+                <span>${a.year||''}</span>
+              </div>
+            </div>`;
+          card.onclick = () => { window.location.href = `anime.html?id=${a.firestoreId}`; };
+          card.addEventListener('mouseover',  () => { card.style.transform='translateY(-4px)'; card.style.boxShadow='0 8px 0 var(--btn-3d)'; });
+          card.addEventListener('mouseout',   () => { card.style.transform=''; card.style.boxShadow='0 4px 0 var(--btn-3d),0 6px 14px var(--shadow)'; });
+          grid.appendChild(card);
+        });
+
+        // Add keyframe if not present
+        if (!document.getElementById('recStyle')) {
+          const s = document.createElement('style');
+          s.id = 'recStyle';
+          s.textContent = '@keyframes recIn{to{opacity:1;transform:translateY(0)}}';
+          document.head.appendChild(s);
+        }
+      } catch(e) { console.warn('Recommendations failed:', e); }
+    }
+
+    // ===== VIEW COUNTER =====
+    function getViewerId() {
+      // Logged-in user → their UID. Guest → stable device ID from localStorage
+      const user = auth.currentUser;
+      if (user) return 'u_' + user.uid;
+      let gid = localStorage.getItem('av_guestId');
+      if (!gid) {
+        gid = 'g_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        localStorage.setItem('av_guestId', gid);
+      }
+      return gid;
+    }
+
+    async function recordView(animeId) {
+      try {
+        const viewerId = getViewerId();
+        const ref = db.collection('anime').doc(animeId);
+
+        // Use Firestore transaction to safely increment
+        await db.runTransaction(async tx => {
+          const doc = await tx.get(ref);
+          if (!doc.exists) return;
+          const data = doc.data();
+          const viewedBy = data.viewedBy || [];
+
+          // Already viewed by this viewer — do nothing
+          if (viewedBy.includes(viewerId)) return;
+
+          tx.update(ref, {
+            views:    (data.views || 0) + 1,
+            viewedBy: [...viewedBy, viewerId]
+          });
+
+          // Animate the badge after transaction
+          const badge = document.getElementById('viewBadge');
+          const count = document.getElementById('viewCount');
+          if (count) {
+            count.textContent = (data.views || 0) + 1;
+            if (badge) {
+              badge.classList.add('counting');
+              setTimeout(() => badge.classList.remove('counting'), 500);
+            }
+          }
+        });
+      } catch(e) {
+        console.warn('View record failed:', e);
+      }
+    }
+
+  </script>
+</body>
+</html>

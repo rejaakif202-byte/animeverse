@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>News — Anime Verse</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <style>
+    :root[data-theme="dark"] {
+      --bg:#000F08; --bg2:#071410; --bg3:#0E1F18;
+      --text:#F0F0F0; --text2:#9AADA5;
+      --accent:#FB3640; --accent2:#E02A33; --btn-3d:#8B1017;
+      --border:#1A3025; --card:#0A1A10; --shadow:rgba(0,0,0,0.72);
+    }
+    :root[data-theme="light"] {
+      --bg:#F7F7FF; --bg2:#EDEDFC; --bg3:#E0E0F8;
+      --text:#27187E; --text2:#4A3A9A;
+      --accent:#758BFD; --accent2:#5A72F0; --btn-3d:#27187E;
+      --border:#C8C8F0; --card:#F2F2FE; --shadow:rgba(39,24,126,0.16);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{font-family:'Poppins',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;transition:background .3s,color .3s;}
+
+    /* Header */
+    .header{position:sticky;top:0;z-index:100;background:var(--bg2);border-bottom:2px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 0 var(--btn-3d),0 6px 20px var(--shadow);}
+    .header-left{display:flex;align-items:center;gap:10px;}
+    .back-btn,.theme-btn{background:var(--bg3);border:1.5px solid var(--border);color:var(--text2);border-radius:8px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;text-decoration:none;font-size:15px;box-shadow:0 3px 0 var(--btn-3d);transition:transform .1s,box-shadow .1s,border-color .15s;}
+    .back-btn:hover,.theme-btn:hover{border-color:var(--accent);color:var(--accent);transform:translateY(-2px);box-shadow:0 5px 0 var(--btn-3d);}
+    .back-btn:active,.theme-btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--btn-3d);}
+    .logo{font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:1px;}
+    .logo span{color:var(--accent);}
+
+    /* Hero */
+    .hero{text-align:center;padding:32px 16px 20px;background:linear-gradient(180deg,rgba(251,54,64,0.1) 0%,transparent 100%);}
+    .hero-icon{width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff;margin:0 auto 12px;box-shadow:0 6px 0 var(--btn-3d),0 10px 24px var(--shadow);animation:float 3s ease-in-out infinite;}
+    @keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
+    .hero h1{font-family:'Bebas Neue',cursive;font-size:30px;letter-spacing:2px;margin-bottom:4px;}
+    .hero p{font-size:12px;color:var(--text2);font-weight:500;}
+
+    /* News feed */
+    .feed{padding:12px 14px 20px;display:flex;flex-direction:column;gap:14px;max-width:680px;margin:0 auto;}
+
+    /* News card */
+    .news-post{
+      background:var(--card);border:1.5px solid var(--border);border-radius:14px;
+      overflow:hidden;
+      box-shadow:0 5px 0 var(--btn-3d),0 8px 20px var(--shadow);
+      opacity:0;transform:translateY(20px);
+      animation:cardIn .4s ease forwards;
+    }
+    @keyframes cardIn{to{opacity:1;transform:translateY(0);}}
+    .news-post:hover{box-shadow:0 7px 0 var(--btn-3d),0 12px 28px var(--shadow);}
+
+    /* Media */
+    .news-media{width:100%;position:relative;overflow:hidden;background:var(--bg3);}
+    .news-media img,.news-media video{width:100%;display:block;max-height:260px;object-fit:cover;}
+    .news-media video{cursor:default;}
+    /* Media type badge */
+
+    /* Content */
+    .news-content{padding:14px;}
+    .news-headline{font-size:15px;font-weight:800;color:var(--text);line-height:1.4;margin-bottom:10px;}
+    .news-desc-wrap{position:relative;}
+    .news-desc{font-size:13px;color:var(--text2);line-height:1.7;font-weight:500;overflow:hidden;transition:max-height .4s ease;}
+    .news-desc.collapsed{max-height:4.2em;/* ~3 lines */}
+    .news-desc.expanded{max-height:2000px;}
+    .read-more-btn{
+      display:inline-flex;align-items:center;gap:5px;
+      margin-top:8px;
+      color:var(--accent);font-size:12px;font-weight:800;cursor:pointer;
+      background:rgba(251,54,64,0.1);border:1px solid rgba(251,54,64,0.3);
+      padding:5px 12px;border-radius:20px;
+      box-shadow:0 2px 0 var(--btn-3d);
+      transition:transform .1s,box-shadow .1s;
+      user-select:none;
+    }
+    .read-more-btn:active{transform:translateY(2px);box-shadow:0 0px 0 var(--btn-3d);}
+
+    /* Footer row */
+    .news-footer{
+      display:flex;align-items:center;justify-content:flex-end;
+      padding:8px 14px 12px;
+      gap:6px;
+    }
+    .news-date{font-size:10px;color:var(--text2);font-weight:600;opacity:0.7;}
+    .news-time{font-size:10px;color:var(--accent);font-weight:700;}
+
+    /* Loading / Empty */
+    .state{text-align:center;padding:48px 20px;color:var(--text2);font-size:13px;font-weight:600;}
+    .state i{font-size:36px;margin-bottom:12px;display:block;color:var(--border);}
+
+    /* Pagination */
+    .pagination{display:flex;justify-content:center;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 14px 40px;}
+    .page-btn{min-width:36px;height:36px;padding:0 8px;border-radius:8px;border:1.5px solid var(--border);background:var(--card);color:var(--text2);font-family:'Poppins',sans-serif;font-size:12px;font-weight:800;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);transition:transform .1s,box-shadow .1s;display:flex;align-items:center;justify-content:center;}
+    .page-btn:hover{transform:translateY(-2px);box-shadow:0 5px 0 var(--btn-3d);border-color:var(--accent);color:var(--accent);}
+    .page-btn:active{transform:translateY(2px);box-shadow:0 1px 0 var(--btn-3d);}
+    .page-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);cursor:default;}
+    .page-dots{color:var(--text2);font-size:14px;padding:0 4px;}
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-left">
+    <a href="index.html" class="back-btn"><i class="fas fa-arrow-left"></i></a>
+    <div class="logo">ANIME <span>VERSE</span></div>
+  </div>
+  <button class="theme-btn" onclick="toggleTheme()" id="themeBtn"><i class="fas fa-moon"></i></button>
+</header>
+
+<div class="hero">
+  <div class="hero-icon"><i class="fas fa-newspaper"></i></div>
+  <h1>Latest News</h1>
+  <p>Stay updated with the latest anime news</p>
+</div>
+
+<div id="stateMsg" class="state">
+  <i class="fas fa-circle-notch fa-spin"></i> Loading news...
+</div>
+
+<div class="feed" id="newsFeed"></div>
+<div class="pagination" id="pagination"></div>
+
+<script>
+// ── Theme ──
+function loadTheme(){const s=localStorage.getItem('av_theme')||'dark';document.documentElement.setAttribute('data-theme',s);document.getElementById('themeBtn').innerHTML=s==='dark'?'<i class="fas fa-moon"></i>':'<i class="fas fa-sun"></i>';}
+function toggleTheme(){const c=document.documentElement.getAttribute('data-theme'),n=c==='dark'?'light':'dark';document.documentElement.setAttribute('data-theme',n);localStorage.setItem('av_theme',n);document.getElementById('themeBtn').innerHTML=n==='dark'?'<i class="fas fa-moon"></i>':'<i class="fas fa-sun"></i>';}
+loadTheme();
+
+// ── State ──
+let allNews = [];
+let currentPage = 1;
+const PAGE_SIZE = 10;
+
+// ── Format date/time ──
+function formatDateTime(ms) {
+  if (!ms) return { date: '', time: '' };
+  const d = new Date(ms);
+  const date = d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
+  const time = d.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12:true });
+  return { date, time };
+}
+
+// ── Build a news card ──
+function buildCard(post, idx) {
+  const { date, time } = formatDateTime(post.postedAtMs);
+  const desc = post.description || '';
+  const isLong = desc.length > 200;
+  const cardId = 'npost-' + idx;
+
+  const div = document.createElement('div');
+  div.className = 'news-post';
+  div.style.animationDelay = (idx % PAGE_SIZE * 0.06) + 's';
+
+  let mediaHtml = '';
+  if (post.mediaUrl) {
+    if (post.mediaType === 'video') {
+      mediaHtml = `<div class="news-media">
+        <video src="${post.mediaUrl}" autoplay muted loop playsinline preload="metadata"
+          style="width:100%;max-height:260px;object-fit:cover;display:block"></video>
+      </div>`;
+    } else {
+      mediaHtml = `<div class="news-media">
+        <img src="${post.mediaUrl}" alt="${post.headline}"
+          onerror="this.parentElement.style.display='none'"/>
+      </div>`;
+    }
+  }
+
+  div.innerHTML = `
+    ${mediaHtml}
+    <div class="news-content">
+      <div class="news-headline">${post.headline}</div>
+      ${desc ? `<div class="news-desc-wrap">
+        <div class="news-desc ${isLong ? 'collapsed' : 'expanded'}" id="desc-${cardId}">${desc}</div>
+        ${isLong ? `<div class="read-more-btn" id="rmb-${cardId}" onclick="toggleDesc('${cardId}')">
+          <i class="fas fa-chevron-down" id="rmi-${cardId}"></i> Read More
+        </div>` : ''}
+      </div>` : ''}
+    </div>
+    <div class="news-footer">
+      <i class="fas fa-clock" style="font-size:10px;color:var(--text2);opacity:.6"></i>
+      <span class="news-time">${time}</span>
+      <span class="news-date">&nbsp;· ${date}</span>
+    </div>`;
+  return div;
+}
+
+function toggleDesc(cardId) {
+  const desc = document.getElementById('desc-' + cardId);
+  const btn  = document.getElementById('rmb-' + cardId);
+  const icon = document.getElementById('rmi-' + cardId);
+  const isCollapsed = desc.classList.contains('collapsed');
+  desc.classList.toggle('collapsed', !isCollapsed);
+  desc.classList.toggle('expanded', isCollapsed);
+  btn.innerHTML = isCollapsed
+    ? '<i class="fas fa-chevron-up"></i> Read Less'
+    : '<i class="fas fa-chevron-down"></i> Read More';
+}
+
+// ── Render page ──
+function renderPage() {
+  const feed = document.getElementById('newsFeed');
+  const state = document.getElementById('stateMsg');
+  feed.innerHTML = '';
+
+  if (allNews.length === 0) {
+    state.innerHTML = '<i class="fas fa-face-frown-open"></i> No news yet. Check back soon!';
+    state.style.display = '';
+    renderPagination();
+    return;
+  }
+  state.style.display = 'none';
+
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const slice = allNews.slice(start, start + PAGE_SIZE);
+  slice.forEach((post, i) => feed.appendChild(buildCard(post, i)));
+  renderPagination();
+  feed.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ── Pagination ──
+function renderPagination() {
+  const wrap = document.getElementById('pagination');
+  wrap.innerHTML = '';
+  const total = allNews.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  if (pages <= 1) return;
+
+  const btn = (label, page, active, dots) => {
+    if (dots) { const s=document.createElement('span');s.className='page-dots';s.textContent='…';wrap.appendChild(s);return; }
+    const b=document.createElement('button');b.className='page-btn'+(active?' active':'');b.textContent=label;
+    if(!active)b.onclick=()=>{currentPage=page;renderPage();};
+    wrap.appendChild(b);
+  };
+
+  if (pages<=7) { for(let p=1;p<=pages;p++) btn(p,p,p===currentPage); }
+  else if (currentPage<=4) { for(let p=1;p<=5;p++) btn(p,p,p===currentPage); btn('…',null,false,true); btn(pages,pages,false); }
+  else if (currentPage>=pages-3) { btn(1,1,false); btn('…',null,false,true); for(let p=pages-4;p<=pages;p++) btn(p,p,p===currentPage); }
+  else { btn(1,1,false);btn('…',null,false,true);for(let p=currentPage-1;p<=currentPage+1;p++)btn(p,p,p===currentPage);btn('…',null,false,true);btn(pages,pages,false); }
+}
+
+// ── Load data ──
+async function loadNews() {
+  try {
+    const snap = await db.collection('news').get();
+    allNews = [];
+    snap.forEach(doc => allNews.push({ id: doc.id, ...doc.data() }));
+    allNews.sort((a,b) => (b.postedAtMs||0) - (a.postedAtMs||0));
+    renderPage();
+  } catch(e) {
+    // Retry once
+    setTimeout(async () => {
+      try {
+        const snap = await db.collection('news').get();
+        allNews = [];
+        snap.forEach(doc => allNews.push({ id: doc.id, ...doc.data() }));
+        allNews.sort((a,b) => (b.postedAtMs||0) - (a.postedAtMs||0));
+        renderPage();
+      } catch(e2) {
+        document.getElementById('stateMsg').innerHTML = '<i class="fas fa-triangle-exclamation"></i> Failed to load. Refresh.';
+      }
+    }, 2000);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadNews);
+</script>
+</body>
+</html>

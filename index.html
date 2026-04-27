@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Anime Verse</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+</head>
+<body style="display:flex;flex-direction:column;min-height:100vh">
+
+<!-- Auth wall will be injected here by app.js -->
+
+<div id="appContent" style="display:flex;flex-direction:column;flex:1;min-height:100vh">
+
+  <div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">ANIME <span>VERSE</span></div>
+
+    <!-- SIDEBAR PROFILE SECTION -->
+    <div id="sidebarProfileSection"
+      style="display:flex;align-items:center;gap:12px;
+        padding:16px 20px;cursor:pointer;
+        border-bottom:1px solid var(--border);
+        transition:background 0.2s"
+      onmouseover="this.style.background='var(--bg3)'"
+      onmouseout="this.style.background=''"
+      onclick="closeSidebar(); if(typeof currentUser!=='undefined'&&currentUser) window.location.href='profile.html'; else openAuthModal()">
+      <div id="sidebarAvatar"
+        style="width:48px;height:48px;border-radius:50%;
+          background:var(--accent);flex-shrink:0;
+          display:flex;align-items:center;justify-content:center;
+          overflow:hidden;font-weight:700">
+        <i class="fas fa-user" style="font-size:20px;color:#fff"></i>
+      </div>
+      <div style="min-width:0">
+        <div id="sidebarUserName"
+          style="font-size:15px;font-weight:700;color:var(--text);
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          Guest
+        </div>
+        <div id="sidebarUserEmail"
+          style="font-size:12px;color:var(--text2);
+            white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          Login to save progress
+        </div>
+      </div>
+      <i class="fas fa-chevron-right"
+        style="color:var(--text2);font-size:12px;margin-left:auto;flex-shrink:0"></i>
+    </div>
+
+    <!-- Old sidebarUserInfo kept for app.js compatibility -->
+    <div id="sidebarUserInfo" style="display:none">
+      <div id="sidebarName" style="display:none"></div>
+      <div id="sidebarEmail" style="display:none"></div>
+    </div>
+
+    <div class="sidebar-section">
+      <p class="sidebar-label">BROWSE</p>
+      <a href="index.html" class="sidebar-item" id="sb-home" onclick="setSidebarActive('sb-home')">
+        <i class="fas fa-house"></i> Home
+      </a>
+      <a href="#" class="sidebar-item" id="sb-trending" onclick="scrollTrending(); closeSidebar(); setSidebarActive('sb-trending')">
+        <i class="fas fa-fire-flame-curved"></i> Trending
+      </a>
+      <a href="#" class="sidebar-item" id="sb-mylist" onclick="showMyList(); closeSidebar(); setSidebarActive('sb-mylist')">
+        <i class="fas fa-bookmark"></i> My List
+      </a>
+    </div>
+
+    <div class="sidebar-section">
+      <!-- Collapsible Categories -->
+      <div id="sidebarCatToggle" onclick="toggleSidebarCats()"
+        style="display:flex;align-items:center;justify-content:space-between;
+          padding:11px 20px;margin:2px 10px;border-radius:8px;cursor:pointer;
+          font-size:13px;font-weight:800;color:var(--text2);letter-spacing:1px;
+          transition:background 0.2s;user-select:none">
+        <span><i class="fas fa-layer-group" style="width:18px;margin-right:12px"></i>CATEGORIES</span>
+        <i class="fas fa-chevron-down" id="catChevron"
+          style="font-size:11px;transition:transform 0.3s"></i>
+      </div>
+      <div id="sidebarCatList" style="overflow:hidden;max-height:0;transition:max-height 0.35s ease">
+        <a href="#" class="sidebar-item" id="sb-all" onclick="filterCategory('all',null); closeSidebar(); setSidebarActive('sb-all')">
+          <i class="fas fa-border-all"></i> All
+        </a>
+        <a href="#" class="sidebar-item" id="sb-anime" onclick="filterCategory('anime',null); closeSidebar(); setSidebarActive('sb-anime')">
+          <i class="fas fa-tv"></i> Anime
+        </a>
+        <a href="#" class="sidebar-item" id="sb-movie" onclick="filterCategory('movie',null); closeSidebar(); setSidebarActive('sb-movie')">
+          <i class="fas fa-clapperboard"></i> Movie
+        </a>
+        <a href="#" class="sidebar-item" id="sb-series" onclick="filterCategory('series',null); closeSidebar(); setSidebarActive('sb-series')">
+          <i class="fas fa-layer-group"></i> Series
+        </a>
+        <a href="news.html" class="sidebar-item" id="sb-news">
+          <i class="fas fa-newspaper"></i> News
+        </a>
+      </div>
+      <!-- A-Z Index -->
+      <a href="az-index.html" class="sidebar-item">
+        <i class="fas fa-arrow-down-a-z"></i> A-Z Index
+      </a>
+
+      <!-- How to Use -->
+      <a href="guide.html" class="sidebar-item">
+        <i class="fas fa-circle-question"></i> How to Use
+      </a>
+    </div>
+
+    <!-- GENRES (live from Firestore) -->
+    <div class="sidebar-section">
+      <div id="sidebarGenreToggle" onclick="toggleSidebarGenres()"
+        style="display:flex;align-items:center;justify-content:space-between;
+          padding:11px 20px;margin:2px 10px;border-radius:8px;cursor:pointer;
+          font-size:13px;font-weight:800;color:var(--text2);letter-spacing:1px;
+          transition:background 0.2s;user-select:none">
+        <span><i class="fas fa-tags" style="width:18px;margin-right:12px"></i>GENRES</span>
+        <i class="fas fa-chevron-down" id="genreChevron"
+          style="font-size:11px;transition:transform 0.3s"></i>
+      </div>
+      <div id="sidebarGenreList"
+        style="overflow:hidden;max-height:0;transition:max-height 0.4s ease;padding:0 10px">
+        <div id="sidebarGenreInner" style="display:grid;grid-template-columns:1fr 1fr;gap:2px 8px;padding:6px 0">
+          <div style="grid-column:1/-1;padding:10px;text-align:center;color:var(--text2);font-size:12px">
+            Loading…
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-section"
+      style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px">
+      <a href="#" class="sidebar-item" id="sidebarLoginBtn"
+        onclick="openAuthModal(); closeSidebar()">
+        <i class="fas fa-right-to-bracket"></i> Login / Sign Up
+      </a>
+      <a href="#" class="sidebar-item" id="sidebarLogoutBtn"
+        style="display:none" onclick="logoutUser(); closeSidebar()">
+        <i class="fas fa-right-from-bracket"></i> Logout
+      </a>
+    </div>
+
+    <div class="sidebar-section" style="border-top:1px solid var(--border);margin-top:4px;padding-top:4px">
+      <p class="sidebar-label">SUPPORT</p>
+      <a href="#" class="sidebar-item" onclick="openReportModal(); closeSidebar()">
+        <i class="fas fa-flag"></i> Report Issue
+      </a>
+    </div>
+
+    <div class="sidebar-section" id="adminSidebarSection" style="display:none">
+      <p class="sidebar-label">ADMIN</p>
+      <a href="admin.html" class="sidebar-item admin-link">
+        <i class="fas fa-sliders"></i> Admin Panel
+      </a>
+    </div>
+  </aside>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <button class="menu-btn" onclick="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+      </button>
+      <a href="index.html" class="logo">ANIME <span>VERSE</span></a>
+    </div>
+    <div class="header-right">
+      <button class="icon-btn" onclick="toggleSearch()" title="Search">
+        <i class="fas fa-magnifying-glass"></i>
+      </button>
+      <button class="icon-btn" id="themeBtn" onclick="toggleTheme()" title="Toggle Theme">
+        <i class="fas fa-moon"></i>
+      </button>
+      <button class="icon-btn" onclick="showMyList()" title="My List">
+        <i class="fas fa-bookmark"></i>
+      </button>
+      <button class="profile-btn icon-btn" id="profileBtn"
+        onclick="if(typeof currentUser!=='undefined'&&currentUser)
+          window.location.href='profile.html';
+          else openAuthModal()">
+        <i class="fas fa-user" id="profileIcon"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- SEARCH BAR -->
+  <div class="search-bar" id="searchBar">
+    <i class="fas fa-magnifying-glass search-icon"></i>
+    <input type="text" id="searchInput"
+      placeholder="Search anime, movies, series..."
+      oninput="searchAnime(this.value)"/>
+    <button onclick="closeSearch()">
+      <i class="fas fa-xmark"></i>
+    </button>
+  </div>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- CATEGORY PILLS -->
+    <div class="category-pills">
+      <button class="pill active" onclick="filterCategory('all', this)">ALL</button>
+      <button class="pill" id="pill-anime" onclick="filterCategory('anime', this)">ANIME<span class="pill-dot" id="dot-anime"></span></button>
+      <button class="pill" id="pill-movie" onclick="filterCategory('movie', this)">MOVIE<span class="pill-dot" id="dot-movie"></span></button>
+      <button class="pill" id="pill-news" onclick="window.location.href='news.html'">NEWS<span class="pill-dot" id="dot-news"></span></button>
+      <button class="pill" id="pill-series" onclick="filterCategory('series', this)">SERIES<span class="pill-dot" id="dot-series"></span></button>
+    </div>
+
+    <!-- SEARCH RESULTS -->
+    <section class="section hidden" id="searchSection">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <i class="fas fa-magnifying-glass" style="color:var(--accent);font-size:16px"></i>
+        <h2 class="section-title" style="margin-bottom:0">Search Results</h2>
+      </div>
+      <div class="grid" id="searchGrid"></div>
+      <p class="empty-msg hidden" id="searchEmpty">No results found.</p>
+    </section>
+
+    <!-- MY LIST -->
+    <section class="section hidden" id="myListSection">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <i class="fas fa-bookmark" style="color:var(--accent);font-size:16px"></i>
+        <h2 class="section-title" style="margin-bottom:0">My List</h2>
+      </div>
+      <div class="grid" id="myListGrid"></div>
+      <div class="empty-state" id="myListEmpty" style="display:none;min-height:40vh">
+        <i class="fas fa-bookmark" style="opacity:0.3"></i>
+        <h2>Nothing saved yet</h2>
+        <p>Tap the bookmark icon on any anime to save it here.</p>
+      </div>
+    </section>
+
+    <!-- CATEGORY RESULTS -->
+    <section class="section hidden" id="categorySection">
+      <h2 class="section-title" id="categoryTitle"></h2>
+      <div class="grid" id="categoryGrid"></div>
+    </section>
+
+    <!-- PAGINATED CATEGORY VIEW (page 2+ of ALL, or any filtered category) -->
+    <section id="pageCategorySection" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+        <div style="width:28px;height:28px;background:var(--accent);border-radius:6px;
+          display:flex;align-items:center;justify-content:center">
+          <i class="fas fa-border-all" style="color:#fff;font-size:12px"></i>
+        </div>
+        <h2 class="section-title" id="pageSectionTitle" style="margin-bottom:0">All Anime</h2>
+      </div>
+      <div class="grid" id="pageCategoryGrid" style="min-height:200px"></div>
+    </section>
+
+    <!-- HOME SECTIONS -->
+    <div id="homeSections">
+
+      <!-- TOP 10 -->
+      <section class="section hidden" id="top10Section">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+          <div style="width:28px;height:28px;background:var(--accent);border-radius:6px;
+            display:flex;align-items:center;justify-content:center">
+            <i class="fas fa-trophy" style="color:#fff;font-size:13px"></i>
+          </div>
+          <h2 class="section-title" style="margin-bottom:0">Top 10 Today</h2>
+        </div>
+        <div class="scroll-row" id="top10Grid"></div>
+      </section>
+
+      <!-- LATEST RELEASES -->
+      <section class="section hidden" id="latestSection">
+        <div class="section-header">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:28px;height:28px;background:var(--accent);border-radius:6px;
+              display:flex;align-items:center;justify-content:center">
+              <i class="fas fa-clapperboard" style="color:#fff;font-size:12px"></i>
+            </div>
+            <h2 class="section-title" style="margin-bottom:0">Latest Releases</h2>
+          </div>
+          <a href="#" class="see-all" onclick="filterCategory('all',null)">
+            See All <i class="fas fa-arrow-right" style="font-size:11px"></i>
+          </a>
+        </div>
+        <div class="grid latest-grid" id="latestGrid" style="min-height:200px"></div>
+        <div id="latestPagination"></div>
+      </section>
+
+      <!-- TRENDING -->
+      <section class="section hidden" id="trendingSection">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"
+          id="trendingAnchor">
+          <div style="width:28px;height:28px;background:var(--accent);border-radius:6px;
+            display:flex;align-items:center;justify-content:center">
+            <i class="fas fa-fire-flame-curved" style="color:#fff;font-size:13px"></i>
+          </div>
+          <h2 class="section-title" style="margin-bottom:0">Trending</h2>
+        </div>
+        <div class="scroll-row" id="trendingGrid"></div>
+      </section>
+
+      <!-- NEWS -->
+      <section class="section hidden" id="newsSection">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+          <div style="width:28px;height:28px;background:var(--accent);border-radius:6px;
+            display:flex;align-items:center;justify-content:center">
+            <i class="fas fa-rss" style="color:#fff;font-size:13px"></i>
+          </div>
+          <h2 class="section-title" style="margin-bottom:0">News</h2>
+        </div>
+        <div id="newsGrid"></div>
+      </section>
+
+      <!-- EMPTY STATE -->
+      <div id="emptyState" class="empty-state hidden">
+        <i class="fas fa-film"></i>
+        <h2> COMING SOON</h2>
+        <p>No content available yet. Check back soon!</p>
+      </div>
+
+      <!-- LOADING STATE -->
+      <div id="loadingState" class="empty-state">
+        <i class="fas fa-circle-notch fa-spin"
+          style="font-size:40px;color:var(--accent)"></i>
+        <h2 style="margin-top:16px">Loading</h2>
+        <p>Fetching content for you...</p>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- PAGINATION -->
+  <div id="paginationWrap" style="padding:8px 14px 4px;flex-shrink:0"></div>
+
+  <!-- FOOTER -->
+  <!-- FOOTER compact -->
+  <footer style="padding:14px 16px 20px;border-top:1.5px solid var(--border);background:var(--bg2)">
+    <div style="max-width:500px;margin:0 auto;text-align:center">
+      <div style="display:flex;align-items:center;justify-content:center;gap:2px;flex-wrap:wrap;margin-bottom:7px">
+        <a href="#" onclick="openReportModal()" style="color:var(--text2);font-size:12px;font-weight:700;text-decoration:none;padding:5px 10px;border-radius:5px;transition:color 0.15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text2)'">Contact</a>
+        <span style="color:var(--border);font-size:11px">·</span>
+        <a href="terms.html" style="color:var(--text2);font-size:12px;font-weight:700;text-decoration:none;padding:5px 10px;border-radius:5px;transition:color 0.15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text2)'">DMCA</a>
+        <span style="color:var(--border);font-size:11px">·</span>
+        <a href="terms.html" style="color:var(--text2);font-size:12px;font-weight:700;text-decoration:none;padding:5px 10px;border-radius:5px;transition:color 0.15s" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text2)'">Terms</a>
+      </div>
+      <div style="font-size:11px;color:var(--text2);font-weight:600;opacity:0.7">
+        © 2026 <span style="color:var(--text);font-weight:800">ANIME VERSE</span> — All rights reserved
+      </div>
+    </div>
+  </footer>
+
+</div><!-- end appContent -->
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="data.js"></script>
+  <script>
+    // Available immediately — before app.js loads
+    window.toggleSidebarCats = function() {
+      var list = document.getElementById('sidebarCatList');
+      var chev = document.getElementById('catChevron');
+      if (!list) return;
+      var open = list.style.maxHeight && list.style.maxHeight !== '0px';
+      list.style.maxHeight    = open ? '0px' : '300px';
+      chev.style.transform    = open ? '' : 'rotate(180deg)';
+    };
+    window.setSidebarActive = function(id) {
+      document.querySelectorAll('.sidebar-item').forEach(function(el) {
+        el.classList.remove('active');
+      });
+      var el = document.getElementById(id);
+      if (el) el.classList.add('active');
+    };
+    // Set Home active by default on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      window.setSidebarActive('sb-home');
+    });
+  </script>
+  <script src="app.js"></script>
+
+  <!-- ===== REPORT MODAL ===== -->
+  <div id="reportModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(5px)">
+    <div style="background:var(--card-bg);border:1.5px solid var(--border);border-radius:18px;padding:24px 20px;width:100%;max-width:400px;position:relative;box-shadow:0 8px 0 rgba(0,0,0,0.3),0 14px 32px rgba(0,0,0,0.5)">
+      <button onclick="closeReportModal()"
+        style="position:absolute;top:14px;right:14px;background:var(--bg3);border:1.5px solid var(--border);border-radius:6px;width:32px;height:32px;cursor:pointer;color:var(--text2);font-size:14px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 0 rgba(0,0,0,0.2)">
+        <i class="fas fa-times"></i>
+      </button>
+
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px">
+        <div style="width:40px;height:40px;background:rgba(229,9,20,0.12);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="fas fa-flag" style="color:#e50914;font-size:18px"></i>
+        </div>
+        <div>
+          <div style="font-size:16px;font-weight:800;color:var(--text)">Report an Issue</div>
+          <div style="font-size:12px;color:var(--text2);font-weight:600">We'll get back to you via email</div>
+        </div>
+      </div>
+
+      <div id="reportSuccess" style="display:none;background:rgba(39,174,96,0.12);border:1.5px solid #27ae60;color:#27ae60;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:700;margin-bottom:14px">
+        <i class="fas fa-check-circle"></i> Report sent successfully!
+      </div>
+      <div id="reportError" style="display:none;background:rgba(229,9,20,0.1);border:1.5px solid #e50914;color:#e50914;padding:10px 14px;border-radius:10px;font-size:13px;font-weight:700;margin-bottom:14px"></div>
+
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:11px;font-weight:800;color:var(--text2);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px">Report Type</label>
+        <select id="reportType"
+          style="width:100%;padding:10px 14px;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:14px;font-weight:600;outline:none">
+          <option value="Video not playing">🎬 Video not playing</option>
+          <option value="Wrong episode">📺 Wrong episode</option>
+          <option value="Broken link">🔗 Broken link</option>
+          <option value="Missing content">📂 Missing content</option>
+          <option value="Subtitle issue">💬 Subtitle issue</option>
+          <option value="Account problem">👤 Account problem</option>
+          <option value="Other">⚠️ Other</option>
+        </select>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:11px;font-weight:800;color:var(--text2);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px">Anime / Episode (optional)</label>
+        <input type="text" id="reportAnime" placeholder="e.g. One Piece Ep 5"
+          style="width:100%;padding:10px 14px;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:13px;font-weight:500;outline:none;box-sizing:border-box"/>
+      </div>
+
+      <div style="margin-bottom:18px">
+        <label style="display:block;font-size:11px;font-weight:800;color:var(--text2);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:6px">Description</label>
+        <textarea id="reportDesc" rows="3" placeholder="Describe the problem..."
+          style="width:100%;padding:10px 14px;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:13px;font-weight:500;outline:none;resize:vertical;box-sizing:border-box;min-height:80px"></textarea>
+      </div>
+
+      <button onclick="submitReport()" id="reportSubmitBtn"
+        style="width:100%;padding:13px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:800;font-family:'Poppins',sans-serif;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,0.2),0 6px 12px rgba(0,0,0,0.2)">
+        <i class="fas fa-paper-plane"></i> Send Report
+      </button>
+    </div>
+  </div>
+
+  <script>
+  window.openReportModal = function() {
+    const modal = document.getElementById('reportModal');
+    modal.style.display = 'flex';
+    document.getElementById('reportSuccess').style.display = 'none';
+    document.getElementById('reportError').style.display   = 'none';
+  };
+  window.closeReportModal = function() {
+    document.getElementById('reportModal').style.display = 'none';
+  };
+  // Close on backdrop click
+  document.getElementById('reportModal').addEventListener('click', function(e) {
+    if (e.target === this) closeReportModal();
+  });
+
+  window.submitReport = async function() {
+    const type  = document.getElementById('reportType').value;
+    const anime = document.getElementById('reportAnime').value.trim();
+    const desc  = document.getElementById('reportDesc').value.trim();
+    const btn   = document.getElementById('reportSubmitBtn');
+
+    if (!desc) {
+      document.getElementById('reportError').textContent = 'Please describe the issue.';
+      document.getElementById('reportError').style.display = 'block';
+      return;
+    }
+
+    document.getElementById('reportError').style.display = 'none';
+    btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Sending...';
+    btn.disabled  = true;
+
+    const user = typeof currentUser !== 'undefined' ? currentUser : null;
+    const userEmail = user?.email || 'Anonymous';
+    const userName  = user?.displayName || 'Anonymous';
+
+    // Try Firestore (works if user is logged in and rules allow it)
+    // If it fails → silently continue to mailto
+    try {
+      await db.collection('reports').add({
+        type,
+        anime:  anime || 'Not specified',
+        desc,
+        userEmail,
+        userName,
+        uid:    user?.uid || 'anonymous',
+        status: 'open',
+        ts: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    } catch(e) {
+      // Firestore failed (permission or offline) — that's OK, we use mailto below
+      console.warn('Report Firestore save failed (non-critical):', e.message);
+    }
+
+    // Always open mailto — this is the reliable delivery method
+    const subject = encodeURIComponent(`[Anime Verse Report] ${type}`);
+    const body    = encodeURIComponent(
+      `Report Type: ${type}\nAnime / Episode: ${anime || 'N/A'}\nDescription: ${desc}\n\nFrom: ${userEmail}\nName: ${userName}`
+    );
+    const mailLink = `mailto:customercareverse@gmail.com?subject=${subject}&body=${body}`;
+
+    // Open mail client
+    window.location.href = mailLink;
+
+    // Show success
+    document.getElementById('reportSuccess').innerHTML =
+      `<i class="fas fa-check-circle"></i> Your email app will open to send the report. If it doesn't, <a href="${mailLink}" style="color:#27ae60;font-weight:800;text-decoration:underline">tap here</a>.`;
+    document.getElementById('reportSuccess').style.display = 'block';
+
+    document.getElementById('reportAnime').value = '';
+    document.getElementById('reportDesc').value  = '';
+    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Report';
+    btn.disabled  = false;
+    setTimeout(closeReportModal, 4000);
+  };
+  </script>
+
+  <script>
+    function toggleLoginPass() {
+      const inp  = document.getElementById('loginPassword');
+      const icon = document.getElementById('loginEyeIcon');
+      if (inp.type === 'password') {
+        inp.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+      } else {
+        inp.type = 'password';
+        icon.className = 'fas fa-eye';
+      }
+    }
+    function toggleSignupPass() {
+      const inp  = document.getElementById('signupPassword');
+      const icon = document.getElementById('signupEyeIcon');
+      if (inp.type === 'password') {
+        inp.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+      } else {
+        inp.type = 'password';
+        icon.className = 'fas fa-eye';
+      }
+    }
+  </script>
+
+
+  <!-- ===== GENRES SIDEBAR (live from Firestore) ===== -->
+  <script>
+    let _genresLoaded = false;
+
+    window.toggleSidebarGenres = function() {
+      const list  = document.getElementById('sidebarGenreList');
+      const chev  = document.getElementById('genreChevron');
+      const inner = document.getElementById('sidebarGenreInner');
+      const open  = list.style.maxHeight && list.style.maxHeight !== '0px';
+
+      if (open) {
+        list.style.maxHeight = '0px';
+        chev.style.transform = 'rotate(0deg)';
+      } else {
+        chev.style.transform = 'rotate(180deg)';
+        if (!_genresLoaded) {
+          loadSidebarGenres().then(() => {
+            list.style.maxHeight = (inner.scrollHeight + 20) + 'px';
+          });
+        } else {
+          list.style.maxHeight = (inner.scrollHeight + 20) + 'px';
+        }
+      }
+    };
+
+    async function loadSidebarGenres() {
+      const inner = document.getElementById('sidebarGenreInner');
+      try {
+        if (typeof db === 'undefined') {
+          inner.innerHTML = '<div style="grid-column:1/-1;padding:10px;text-align:center;color:var(--text2);font-size:12px">Database not ready</div>';
+          return;
+        }
+        const snap = await db.collection('anime').get();
+        const set  = new Set();
+        snap.forEach(doc => {
+          const d = doc.data();
+          if (Array.isArray(d.genres))           d.genres.forEach(g => g && set.add(String(g).trim()));
+          else if (Array.isArray(d.genre))       d.genre .forEach(g => g && set.add(String(g).trim()));
+          else if (typeof d.genres === 'string') d.genres.split(',').forEach(g => g.trim() && set.add(g.trim()));
+          else if (typeof d.genre  === 'string') d.genre .split(',').forEach(g => g.trim() && set.add(g.trim()));
+        });
+        const genres = [...set].sort((a, b) => a.localeCompare(b));
+
+        if (!genres.length) {
+          inner.innerHTML = '<div style="grid-column:1/-1;padding:10px;text-align:center;color:var(--text2);font-size:12px">No genres yet</div>';
+        } else {
+          inner.innerHTML = genres.map((g, i) => `
+            <a href="genre.html?name=${encodeURIComponent(g)}"
+               class="sidebar-item"
+               style="padding:8px 10px;font-size:13px;animation:gFade .35s both;animation-delay:${i*25}ms"
+               onclick="closeSidebar && closeSidebar()">
+              ${g}
+            </a>
+          `).join('');
+        }
+        _genresLoaded = true;
+      } catch (err) {
+        console.error('Genre load failed:', err);
+        inner.innerHTML = '<div style="grid-column:1/-1;padding:10px;text-align:center;color:#e55;font-size:12px">Failed to load</div>';
+      }
+    }
+
+    (function injectGenreAnim(){
+      const s = document.createElement('style');
+      s.textContent = '@keyframes gFade{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}';
+      document.head.appendChild(s);
+    })();
+  </script>
+
+</body>
+</html>
