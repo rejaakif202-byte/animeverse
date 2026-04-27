@@ -1,0 +1,2953 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin — Anime Verse</title>
+  <link rel="stylesheet" href="style.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@400;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    /* ===== SEARCHABLE SELECT ===== */
+    .ss-wrap { position: relative; width: 100%; }
+    .ss-display {
+      width: 100%; background: var(--input-bg); border: 1.5px solid var(--border);
+      border-radius: 8px; padding: 10px 14px; color: var(--text);
+      font-size: 14px; font-family: 'Poppins', sans-serif; font-weight: 500;
+      cursor: pointer; display: flex; align-items: center; justify-content: space-between;
+      transition: border-color 0.2s; box-sizing: border-box;
+    }
+    .ss-display:hover { border-color: var(--accent); }
+    .ss-display i { font-size: 12px; color: var(--text2); transition: transform 0.2s; }
+
+    .ss-dropdown {
+      position: absolute; top: calc(100% + 5px); left: 0; right: 0;
+      background: var(--card-bg); border: 1.5px solid var(--border);
+      border-radius: 10px; z-index: 500; box-shadow: 0 8px 24px var(--shadow);
+      overflow: hidden; animation: ssFade 0.2s ease;
+    }
+    @keyframes ssFade { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:translateY(0); } }
+
+    .ss-dropdown.hidden { display: none; }
+    .ss-search {
+      width: 100%; padding: 12px; background: var(--bg3); border: none;
+      border-bottom: 1.5px solid var(--border); color: var(--text);
+      font-family: 'Poppins', sans-serif; font-size: 13px; outline: none; box-sizing: border-box;
+    }
+    .ss-options { max-height: 250px; overflow-y: auto; }
+    .ss-option {
+      padding: 10px 14px; font-size: 13px; color: var(--text);
+      cursor: pointer; transition: background 0.2s;
+    }
+    .ss-option:hover { background: var(--accent); color: #fff; }
+    .ss-option.selected { background: var(--accent); color: #fff; font-weight: 700; }
+  </style>
+</head>
+<body class="admin-body">
+
+  <!-- Hidden file inputs -->
+  <input type="file" id="coverImgInput" accept="image/*" style="display:none"
+    onchange="handleImgPick(this,'a_thumb','coverPreview')"/>
+  <input type="file" id="bannerImgInput" accept="image/*" style="display:none"
+    onchange="handleImgPick(this,'a_banner','bannerPreview')"/>
+  <input type="file" id="epThumbInput" accept="image/*" style="display:none"
+    onchange="handleImgPick(this,'ep_thumb','epThumbPreview')"/>
+  <input type="file" id="adminVideoInput" accept="video/*,.mkv"
+    style="display:none" onchange="handleVideoUpload(this)"/>
+
+
+  <!-- EDIT NEWS MODAL -->
+  <div id="editNewsModal"
+    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);
+      z-index:500;overflow-y:auto;padding:20px;backdrop-filter:blur(4px);
+      align-items:flex-start;justify-content:center">
+    <div style="background:var(--card-bg);border:1.5px solid var(--border);
+      border-radius:16px;padding:20px;width:100%;max-width:500px;margin:0 auto;
+      box-shadow:0 6px 0 var(--btn-3d),0 12px 32px rgba(0,0,0,0.6)">
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div style="font-size:15px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:8px">
+          <i class="fas fa-pen" style="color:var(--accent)"></i> Edit News Post
+        </div>
+        <button onclick="closeEditNews()"
+          style="background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;
+            width:34px;height:34px;cursor:pointer;color:var(--text2);font-size:15px;
+            box-shadow:0 3px 0 var(--btn-3d);display:flex;align-items:center;justify-content:center">
+          <i class="fas fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Media preview + picker -->
+      <div class="form-group">
+        <label>MEDIA</label>
+        <div id="en_previewWrap" style="display:none;margin-bottom:8px;border-radius:10px;overflow:hidden;border:1.5px solid var(--border)">
+          <img  id="en_previewImg" style="width:100%;max-height:160px;object-fit:cover;display:none"/>
+          <video id="en_previewVid" style="width:100%;max-height:160px;display:none" muted playsinline loop autoplay></video>
+        </div>
+        <button type="button" onclick="document.getElementById('en_mediaFile').click()"
+          style="width:100%;box-sizing:border-box;background:var(--bg3);border:1.5px solid var(--border);
+            border-radius:8px;padding:10px;color:var(--text);font-family:'Poppins',sans-serif;
+            font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);
+            display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:6px">
+          <i class="fas fa-image"></i> Pick New Image/Video
+        </button>
+        <input type="file" id="en_mediaFile" accept="image/*,video/*" style="display:none"
+          onchange="handleEditNewsFile(this)"/>
+        <input type="url" id="en_mediaUrl" placeholder="Or paste image/video URL"
+          style="width:100%;box-sizing:border-box;padding:10px 12px;background:var(--bg2);
+            border:1.5px solid var(--border);border-radius:8px;color:var(--text);
+            font-family:'Poppins',sans-serif;font-size:12px;outline:none"/>
+      </div>
+
+      <!-- Headline -->
+      <div class="form-group">
+        <label>HEADLINE *</label>
+        <input type="text" id="en_headline" placeholder="News headline..."/>
+      </div>
+
+      <!-- Description -->
+      <div class="form-group">
+        <label>DESCRIPTION</label>
+        <textarea id="en_desc" rows="4" placeholder="Full description..."
+          style="width:100%;box-sizing:border-box;padding:10px 12px;background:var(--bg2);
+            border:1.5px solid var(--border);border-radius:8px;color:var(--text);
+            font-family:'Poppins',sans-serif;font-size:13px;outline:none;resize:vertical"></textarea>
+      </div>
+
+      <!-- Buttons -->
+      <div style="display:flex;gap:10px">
+        <button onclick="closeEditNews()"
+          style="flex:1;padding:12px;background:var(--bg3);border:1.5px solid var(--border);
+            border-radius:10px;color:var(--text2);font-family:'Poppins',sans-serif;
+            font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d)">
+          Cancel
+        </button>
+        <button id="saveEditNewsBtn" onclick="saveEditNews()"
+          style="flex:2;padding:12px;background:var(--accent);border:none;border-radius:10px;
+            color:#fff;font-family:'Poppins',sans-serif;font-size:13px;font-weight:700;
+            cursor:pointer;box-shadow:0 4px 0 var(--btn-3d);display:flex;align-items:center;
+            justify-content:center;gap:7px">
+          <i class="fas fa-floppy-disk"></i> Save
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EDIT ANIME MODAL -->
+  <div id="editAnimeModal"
+    style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);
+      z-index:400;overflow-y:auto;padding:20px;backdrop-filter:blur(4px)">
+    <div style="background:var(--card-bg);border:1px solid var(--border);
+      border-radius:16px;padding:20px;max-width:500px;margin:0 auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;
+        margin-bottom:16px">
+        <h3 style="font-size:16px;font-weight:700;color:var(--text);margin:0">
+          <i class="fas fa-pen" style="color:var(--accent)"></i>
+          Edit Anime
+        </h3>
+        <button onclick="closeEditAnime()"
+          style="background:none;border:none;color:var(--text2);
+            cursor:pointer;font-size:18px">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <input type="hidden" id="edit_anime_id"/>
+      <div id="editAnimeSuccess" class="success-msg">Updated!</div>
+      <div id="editAnimeError"
+        style="display:none;background:rgba(229,9,20,0.1);
+          border:1px solid #e50914;color:#e50914;padding:8px;
+          border-radius:8px;font-size:12px;margin-bottom:12px"></div>
+
+      <div class="form-group"><label>TITLE</label>
+        <input type="text" id="edit_title" placeholder="Anime title"/></div>
+      <div class="form-group"><label>TYPE</label>
+        <select id="edit_type">
+          <option value="anime">Anime</option>
+          <option value="movie">Movie</option>
+          <option value="series">Series</option>
+          <option value="news">News</option>
+        </select></div>
+      <div class="form-group"><label>GENRES</label>
+        <input type="text" id="edit_genre"
+          placeholder="Action, Fantasy"/></div>
+      <div class="form-group"><label>RATING</label>
+        <input type="number" id="edit_rating"
+          placeholder="8.5" min="0" max="10" step="0.1"/></div>
+      <div class="form-group"><label>YEAR</label>
+        <input type="number" id="edit_year" placeholder="2024"/></div>
+      <div class="form-group"><label>STATUS</label>
+        <select id="edit_status">
+          <option value="Ongoing">Ongoing</option>
+          <option value="Completed">Completed</option>
+          <option value="Upcoming">Upcoming</option>
+        </select></div>
+      <div class="form-group"><label>STUDIO</label>
+        <input type="text" id="edit_studio" placeholder="Studio name"/></div>
+      <div class="form-group"><label>COVER IMAGE</label>
+        <div style="display:flex;gap:8px;margin-bottom:6px">
+          <div id="edit_thumb_preview" style="width:54px;height:54px;border-radius:8px;background:var(--bg3);border:1.5px solid var(--border);overflow:hidden;flex-shrink:0">
+            <img id="edit_thumb_img" style="width:100%;height:100%;object-fit:cover;display:none"/>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+            <button type="button" onclick="document.getElementById('edit_thumb_file').click()"
+              style="width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:9px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+              <i class="fas fa-image"></i> Pick from Gallery
+            </button>
+            <input type="url" id="edit_thumb" placeholder="Or paste image URL"
+              oninput="previewEditImg('edit_thumb','edit_thumb_img')"
+              style="padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+          </div>
+        </div>
+        <input type="file" id="edit_thumb_file" accept="image/*" style="display:none"
+          onchange="handleEditFile(this,'edit_thumb','edit_thumb_img')"/>
+      </div>
+      <div class="form-group"><label>BANNER IMAGE</label>
+        <div style="display:flex;gap:8px;margin-bottom:6px">
+          <div id="edit_banner_preview" style="width:54px;height:54px;border-radius:8px;background:var(--bg3);border:1.5px solid var(--border);overflow:hidden;flex-shrink:0">
+            <img id="edit_banner_img" style="width:100%;height:100%;object-fit:cover;display:none"/>
+          </div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+            <button type="button" onclick="document.getElementById('edit_banner_file').click()"
+              style="width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:9px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+              <i class="fas fa-image"></i> Pick from Gallery
+            </button>
+            <input type="url" id="edit_banner" placeholder="Or paste banner URL"
+              oninput="previewEditImg('edit_banner','edit_banner_img')"
+              style="padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+          </div>
+        </div>
+        <input type="file" id="edit_banner_file" accept="image/*" style="display:none"
+          onchange="handleEditFile(this,'edit_banner','edit_banner_img')"/>
+      </div>
+      <div class="form-group"><label>DESCRIPTION</label>
+        <textarea id="edit_desc" placeholder="Story..."></textarea></div>
+      <div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap">
+        <label style="display:flex;align-items:center;gap:6px;
+          font-size:13px;cursor:pointer">
+          <input type="checkbox" id="edit_trending"/> Trending</label>
+        <label style="display:flex;align-items:center;gap:6px;
+          font-size:13px;cursor:pointer">
+          <input type="checkbox" id="edit_latest"/> Latest</label>
+        <label style="display:flex;align-items:center;gap:6px;
+          font-size:13px;cursor:pointer">
+          <input type="checkbox" id="edit_top10"/> Top 10</label>
+      </div>
+      <!-- Published toggle -->
+      <div style="background:rgba(39,174,96,0.1);border:1.5px solid rgba(39,174,96,0.4);border-radius:10px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div>
+          <div style="font-size:13px;font-weight:800;color:var(--text)"><i class="fas fa-rocket" style="color:#27ae60"></i> Published to Website</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:2px">When OFF, only you (admin) can see this anime.</div>
+        </div>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0">
+          <input type="checkbox" id="edit_published" style="width:18px;height:18px;accent-color:#27ae60;cursor:pointer"/>
+          <span id="edit_published_label" style="font-size:12px;font-weight:700;color:#27ae60">Live</span>
+        </label>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-outline"
+          onclick="closeEditAnime()" style="flex:1">Cancel</button>
+        <button class="btn-primary" id="saveEditAnimeBtn"
+          onclick="saveEditAnime()" style="flex:1">
+          <i class="fas fa-floppy-disk"></i> Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="loginScreen" class="admin-login">
+    <div class="login-card">
+      <span class="logo">ANIME <span style="color:var(--accent)">VERSE</span></span>
+      <p style="color:var(--text2);font-size:13px;margin-bottom:20px">
+        Admin Panel
+      </p>
+      <div class="form-group">
+        <label>PASSWORD</label>
+        <div style="position:relative">
+          <input type="password" id="adminPass"
+            placeholder="Enter password"
+            style="padding-right:44px"
+            onkeydown="if(event.key==='Enter') checkLogin()"/>
+          <button onclick="togglePassView()"
+            style="position:absolute;right:10px;top:50%;
+              transform:translateY(-50%);background:none;
+              border:none;color:var(--text2);cursor:pointer;font-size:16px">
+            <i class="fas fa-eye" id="eyeIcon"></i>
+          </button>
+        </div>
+      </div>
+      <div id="loginError"
+        style="display:none;background:rgba(229,9,20,0.1);
+          border:1px solid #e50914;color:#e50914;padding:8px;
+          border-radius:6px;font-size:12px;margin-bottom:12px">
+        Wrong password!
+      </div>
+      <button class="btn-primary" onclick="checkLogin()" style="width:100%">
+        <i class="fas fa-lock"></i> Login
+      </button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="adminDashboard" style="display:none">
+    <header class="admin-header">
+      <span class="logo">
+        ANIME <span style="color:var(--accent)">VERSE</span>
+        <span style="font-size:13px;color:var(--text2);
+          font-family:'Poppins',sans-serif;font-weight:400"> Admin</span>
+      </span>
+      <div style="display:flex;gap:8px">
+        <button class="icon-btn" onclick="toggleTheme()" id="themeBtn">
+          <i class="fas fa-moon"></i>
+        </button>
+        <a href="index.html" class="icon-btn"
+          style="display:flex;align-items:center;
+            justify-content:center;width:38px;height:38px">
+          <i class="fas fa-house"></i>
+        </a>
+        <button class="icon-btn" onclick="logout()">
+          <i class="fas fa-right-from-bracket"></i>
+        </button>
+      </div>
+    </header>
+
+    <div class="admin-main">
+      <!-- STATS -->
+      <div style="display:flex;align-items:center;justify-content:space-between;
+        margin:16px 0 10px">
+        <span style="font-size:11px;font-weight:700;color:var(--text2);
+          letter-spacing:1px;text-transform:uppercase">Overview</span>
+        <button id="refreshStatsBtn" onclick="refreshDashboard()"
+          style="display:flex;align-items:center;gap:6px;
+            background:var(--bg3);border:1.5px solid var(--border);
+            color:var(--text2);border-radius:8px;padding:6px 14px;
+            font-family:'Poppins',sans-serif;font-size:12px;font-weight:800;
+            cursor:pointer;transition:all 0.15s;
+            box-shadow:0 2px 0 var(--btn-3d)">
+          <i class="fas fa-rotate-right"></i> Refresh
+        </button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);
+        gap:10px;margin-bottom:20px">
+        <div class="admin-card" style="text-align:center;padding:14px 8px">
+          <div style="font-size:26px;font-weight:700;color:var(--accent)"
+            id="statTotal">0</div>
+          <div style="font-size:11px;color:var(--text2)">Total</div>
+        </div>
+        <div class="admin-card" style="text-align:center;padding:14px 8px">
+          <div style="font-size:26px;font-weight:700;color:#2a6dd9"
+            id="statAnime">0</div>
+          <div style="font-size:11px;color:var(--text2)">Anime</div>
+        </div>
+        <div class="admin-card" style="text-align:center;padding:14px 8px">
+          <div style="font-size:26px;font-weight:700;color:#27ae60"
+            id="statMovies">0</div>
+          <div style="font-size:11px;color:var(--text2)">Movies</div>
+        </div>
+        <div class="admin-card" style="text-align:center;padding:14px 8px">
+          <div style="font-size:26px;font-weight:700;color:#9b59b6"
+            id="statSeries">0</div>
+          <div style="font-size:11px;color:var(--text2)">Series</div>
+        </div>
+        <div class="admin-card" style="text-align:center;padding:14px 8px">
+          <div style="font-size:26px;font-weight:700;color:#e67e22"
+            id="statNews">0</div>
+          <div style="font-size:11px;color:var(--text2)">News</div>
+        </div>
+      </div>
+
+      <!-- TABS -->
+      <div class="admin-tabs">
+        <button class="admin-tab active" onclick="switchTab('add',this)">
+          <i class="fas fa-plus"></i> Add
+        </button>
+        <button class="admin-tab" onclick="switchTab('manage',this)">
+          <i class="fas fa-list"></i> Manage
+        </button>
+        <button class="admin-tab" onclick="switchTab('episode',this)">
+          <i class="fas fa-film"></i> Episode
+        </button>
+        <button class="admin-tab" onclick="switchTab('news',this)">
+          <i class="fas fa-newspaper"></i> News
+        </button>
+        <button class="admin-tab" onclick="switchTab('guide',this)">
+          <i class="fas fa-book"></i> Guide
+        </button>
+      </div>
+
+      <!-- ===== TAB: ADD ANIME ===== -->
+      <div class="admin-panel active" id="tab-add">
+        <div class="admin-card">
+          <h3><i class="fas fa-plus" style="color:var(--accent)"></i>
+            Add New Anime / Movie</h3>
+          <div id="addSuccess" class="success-msg">Added!</div>
+          <div id="addError" style="display:none;background:rgba(229,9,20,0.1);
+            border:1px solid #e50914;color:#e50914;padding:8px;
+            border-radius:8px;font-size:12px;margin-bottom:14px"></div>
+
+          <div class="form-group"><label>TITLE *</label>
+            <input type="text" id="a_title" placeholder="e.g. Demon Slayer"/></div>
+          <div class="form-group"><label>TYPE</label>
+            <select id="a_type">
+              <option value="anime">Anime</option>
+              <option value="movie">Movie</option>
+              <option value="series">Series</option>
+              <option value="news">News</option>
+            </select></div>
+          <div class="form-group"><label>GENRES</label>
+            <input type="text" id="a_genre" placeholder="Action, Fantasy"/></div>
+          <div class="form-group"><label>RATING</label>
+            <input type="number" id="a_rating" placeholder="8.5"
+              min="0" max="10" step="0.1"/></div>
+          <div class="form-group"><label>YEAR</label>
+            <input type="number" id="a_year" placeholder="2024"/></div>
+          <div class="form-group"><label>STATUS</label>
+            <select id="a_status">
+              <option value="Ongoing">Ongoing</option>
+              <option value="Completed">Completed</option>
+              <option value="Upcoming">Upcoming</option>
+            </select></div>
+          <div class="form-group"><label>STUDIO</label>
+            <input type="text" id="a_studio" placeholder="e.g. ufotable"/></div>
+
+          <!-- COVER IMAGE -->
+          <div class="form-group">
+            <label>COVER IMAGE *</label>
+            <input type="hidden" id="a_thumb"/>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <div id="coverPreview"
+                style="width:60px;height:80px;border-radius:8px;
+                  background:var(--bg3);border:1px solid var(--border);
+                  display:flex;align-items:center;justify-content:center;
+                  overflow:hidden;flex-shrink:0">
+                <i class="fas fa-image"
+                  style="color:var(--text2);font-size:20px"></i>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+                <button class="btn-outline"
+                  onclick="document.getElementById('coverImgInput').click()"
+                  style="font-size:13px">
+                  <i class="fas fa-image"
+                    style="color:var(--accent)"></i> Gallery
+                </button>
+                <input type="url" id="a_thumb_url"
+                  placeholder="Or paste image URL"
+                  oninput="onImgUrl(this.value,'a_thumb','coverPreview')"/>
+              </div>
+            </div>
+          </div>
+
+          <!-- BANNER IMAGE -->
+          <div class="form-group">
+            <label>BANNER (Wide)</label>
+            <input type="hidden" id="a_banner"/>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <div id="bannerPreview"
+                style="width:100px;height:56px;border-radius:8px;
+                  background:var(--bg3);border:1px solid var(--border);
+                  display:flex;align-items:center;justify-content:center;
+                  overflow:hidden;flex-shrink:0">
+                <i class="fas fa-panorama"
+                  style="color:var(--text2);font-size:18px"></i>
+              </div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:8px">
+                <button class="btn-outline"
+                  onclick="document.getElementById('bannerImgInput').click()"
+                  style="font-size:13px">
+                  <i class="fas fa-image"
+                    style="color:var(--accent)"></i> Gallery
+                </button>
+                <input type="url" id="a_banner_url"
+                  placeholder="Or paste URL"
+                  oninput="onImgUrl(this.value,'a_banner','bannerPreview')"/>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group"><label>DESCRIPTION</label>
+            <textarea id="a_desc" placeholder="Story..."></textarea></div>
+          <div style="display:flex;gap:16px;margin-bottom:14px;flex-wrap:wrap">
+            <label style="display:flex;align-items:center;
+              gap:6px;font-size:13px;cursor:pointer">
+              <input type="checkbox" id="a_trending"/> Trending</label>
+            <label style="display:flex;align-items:center;
+              gap:6px;font-size:13px;cursor:pointer">
+              <input type="checkbox" id="a_latest"/> Latest</label>
+            <label style="display:flex;align-items:center;
+              gap:6px;font-size:13px;cursor:pointer">
+              <input type="checkbox" id="a_top10"/> Top 10</label>
+          </div>
+
+          <button class="btn-primary" id="addAnimeBtn"
+            onclick="addAnime()" style="width:100%;background:#555">
+            <i class="fas fa-floppy-disk"></i> Save as Draft
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== TAB: MANAGE ===== -->
+      <div class="admin-panel" id="tab-manage">
+        <div class="admin-card">
+          <h3><i class="fas fa-list" style="color:var(--accent)"></i>
+            All Anime</h3>
+          <!-- Search in manage -->
+          <div class="form-group" style="margin-bottom:14px">
+            <input type="text" id="manageSearchInput"
+              placeholder="🔍 Search anime..."
+              oninput="filterManageList(this.value)"/>
+          </div>
+          <div id="manageList"></div>
+          <div id="manageEmpty"
+            style="color:var(--text2);font-size:13px;
+              text-align:center;padding:20px;display:none">
+            No anime found.
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== TAB: EPISODE ===== -->
+      <div class="admin-panel" id="tab-episode">
+        <div class="admin-card">
+          <h3><i class="fas fa-film" style="color:var(--accent)"></i>
+            Season & Episode Management</h3>
+          <div id="epSuccess" class="success-msg">Saved!</div>
+          <div id="epError"
+            style="display:none;background:rgba(229,9,20,0.1);
+              border:1px solid #e50914;color:#e50914;padding:8px;
+              border-radius:8px;font-size:12px;margin-bottom:14px"></div>
+
+          <!-- SEARCHABLE ANIME SELECT -->
+          <div class="form-group">
+            <label>SELECT ANIME *</label>
+            <div class="ss-wrap" id="ssAnimeWrap">
+              <div class="ss-display" id="ssAnimeDisplay"
+                onclick="toggleSS('anime')">
+                <span id="ssAnimeText">-- Select Anime --</span>
+                <i class="fas fa-chevron-down" id="ssAnimeChevron"></i>
+              </div>
+              <div class="ss-dropdown hidden" id="ssAnimeDropdown">
+                <input class="ss-search" type="text"
+                  placeholder="🔍 Search..."
+                  id="ssAnimeSearch"
+                  oninput="searchSS('anime', this.value)"
+                  onclick="event.stopPropagation()"/>
+                <div class="ss-options" id="ssAnimeOptions"></div>
+              </div>
+              <input type="hidden" id="ep_anime"/>
+            </div>
+          </div>
+
+          <!-- SEARCHABLE SEASON SELECT -->
+          <div class="form-group">
+            <label>SEASON *</label>
+            <div class="ss-wrap" id="ssSeasonWrap">
+              <div class="ss-display" id="ssSeasonDisplay"
+                onclick="toggleSS('season')">
+                <span id="ssSeasonText">-- Select Season --</span>
+                <i class="fas fa-chevron-down" id="ssSeasonChevron"></i>
+              </div>
+              <div class="ss-dropdown hidden" id="ssSeasonDropdown">
+                <input class="ss-search" type="text"
+                  placeholder="🔍 Search..."
+                  id="ssSeasonSearch"
+                  oninput="searchSS('season', this.value)"
+                  onclick="event.stopPropagation()"/>
+                <div class="ss-options" id="ssSeasonOptions"></div>
+              </div>
+              <input type="hidden" id="ep_season"/>
+            </div>
+          </div>
+
+          <!-- HIDDEN FILE INPUT FOR SEASON POSTER -->
+          <input type="file" id="seasonPosterInput" accept="image/*" style="display:none"
+            onchange="handleSeasonPosterPick(this)"/>
+
+          <!-- NEW SEASON FIELDS -->
+          <div id="newSeasonFields" style="display:none">
+
+            <!-- Season Name -->
+            <div class="form-group">
+              <label>SEASON TITLE *</label>
+              <input type="text" id="new_season_title" placeholder="e.g. Season 1"/>
+            </div>
+            <div class="form-group">
+              <label>SEASON YEAR</label>
+              <input type="number" id="new_season_year" placeholder="2024"/>
+            </div>
+
+            <!-- Sub-season name (optional) -->
+            <div style="background:rgba(151,135,243,0.07);border:1.5px solid rgba(151,135,243,0.25);
+              border-radius:12px;padding:14px;margin-bottom:14px">
+              <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px">
+                <i class="fas fa-layer-group" style="color:var(--accent)"></i>
+                Sub-Season Name
+                <span style="font-size:10px;font-weight:600;color:var(--text2);margin-left:6px">(Optional)</span>
+              </div>
+              <div style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.6">
+                If filled → creates <strong style="color:var(--accent)">[Season Title]</strong> as parent,
+                and <strong style="color:var(--accent)">[Sub-Season Name]</strong> as child (like East Blue Saga under Season 1).<br/>
+                If empty → TG pack goes directly into the season.
+              </div>
+              <input type="text" id="new_subseason_title"
+                placeholder="e.g. East Blue Saga (leave blank if not needed)"
+                style="width:100%;background:var(--input-bg);border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:14px;font-family:'Poppins',sans-serif;font-weight:500;outline:none;box-sizing:border-box;transition:border-color 0.2s;"
+                onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border)'"/>
+            </div>
+
+            <!-- Season Poster — Gallery or URL -->
+            <div class="form-group">
+              <label>SEASON POSTER
+                <span style="font-size:10px;font-weight:600;color:var(--text2);margin-left:4px">(optional — shown on anime page)</span>
+              </label>
+              <input type="hidden" id="new_season_poster"/>
+              <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+                <div id="seasonPosterPreview"
+                  style="width:80px;height:50px;border-radius:8px;
+                    background:var(--bg3);border:1.5px solid var(--border);
+                    display:flex;align-items:center;justify-content:center;
+                    overflow:hidden;flex-shrink:0">
+                  <i class="fas fa-image" style="color:var(--text2);font-size:16px"></i>
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:7px">
+                  <button class="btn-outline"
+                    onclick="document.getElementById('seasonPosterInput').click()"
+                    style="font-size:12px">
+                    <i class="fas fa-images" style="color:var(--accent)"></i> Pick from Gallery
+                  </button>
+                  <input type="url" id="new_season_poster_url"
+                    placeholder="Or paste image URL"
+                    oninput="onSeasonPosterUrl(this.value)"/>
+                </div>
+              </div>
+            </div>
+
+            <!-- Parent season (only show if user has NOT filled sub-season name) -->
+            <div id="parentSeasonWrap" class="form-group">
+              <label>PARENT SEASON
+                <span style="font-size:10px;font-weight:600;color:var(--text2);margin-left:4px">(legacy — use Sub-Season field above instead)</span>
+              </label>
+              <select id="new_season_parent"
+                style="width:100%;padding:10px 14px;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;outline:none">
+                <option value="">— No parent (top-level season) —</option>
+              </select>
+            </div>
+
+            <!-- TG Pack -->
+            <div class="tg-admin-box">
+              <div class="tg-admin-header">
+                <i class="fab fa-telegram" style="color:#2ca5e0;font-size:20px;flex-shrink:0"></i>
+                <div>
+                  <div style="font-weight:800;font-size:14px">Season Telegram Pack</div>
+                  <div style="font-size:11px;color:var(--text2);margin-top:2px">
+                    Full season link. Episodes optional!
+                  </div>
+                </div>
+              </div>
+              <div class="form-group"><label>EPISODE RANGE</label>
+                <input type="text" id="stg_range" placeholder="e.g. 1-26"/></div>
+              <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Quality Links</div>
+              <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+                <div style="display:flex;gap:8px;flex:1;min-width:0">
+                  <input type="text" id="stg_ql" placeholder="e.g. 480p" maxlength="12"
+                    style="width:85px;flex-shrink:0;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;outline:none;box-sizing:border-box"/>
+                  <input type="url" id="stg_qu" placeholder="Telegram link"
+                    style="flex:1;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+                </div>
+                <button onclick="addStgQ()"
+                  style="background:var(--accent);border:none;border-radius:8px;padding:9px 13px;color:#fff;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);flex-shrink:0;font-size:16px;line-height:1;margin-left:auto">
+                  <i class="fas fa-plus"></i>
+                </button>
+              </div>
+              <div id="stg_qd" style="display:flex;flex-wrap:wrap;gap:6px;min-height:24px;margin-bottom:12px">
+                <span style="font-size:11px;color:var(--text2);font-style:italic">No qualities added yet</span>
+              </div>
+              <div class="form-group"><label>OR SINGLE LINK (all qualities)</label>
+                <input type="url" id="stg_single" placeholder="One link for all"/></div>
+              <button class="btn-primary" id="saveSeasonOnlyBtn"
+                onclick="saveSeasonOnly()"
+                style="width:100%;background:#2ca5e0">
+                <i class="fab fa-telegram"></i>
+                Save Season + TG Pack Only
+              </button>
+            </div>
+            <div style="text-align:center;padding:10px 0;
+              color:var(--text2);font-size:12px;font-weight:600;
+              letter-spacing:1px">── OR ADD EPISODES BELOW ──</div>
+          </div>
+
+          <!-- EDIT EXISTING SEASON PACKS -->
+          <div id="editSeasonSection" style="display:none">
+            <!-- Season Rename Box -->
+            <div style="background:var(--card-bg);border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 3px 0 var(--btn-3d)">
+              <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:7px">
+                <i class="fas fa-pencil" style="color:var(--accent);font-size:14px"></i> Rename Season
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <input type="text" id="rename_season_input"
+                  placeholder="New season name..."
+                  style="width:100%;padding:10px 12px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:13px;font-weight:600;outline:none;box-sizing:border-box"/>
+                <button onclick="renameSeason()"
+                  style="width:100%;background:var(--accent);border:none;border-radius:8px;padding:11px;color:#fff;font-size:13px;font-weight:700;font-family:'Poppins',sans-serif;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);display:flex;align-items:center;justify-content:center;gap:6px">
+                  <i class="fas fa-floppy-disk"></i> Save Rename
+                </button>
+              </div>
+            </div>
+            <!-- Season Poster Edit Box -->
+            <div style="background:var(--card-bg);border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 3px 0 var(--btn-3d)">
+              <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:10px;display:flex;align-items:center;gap:7px">
+                <i class="fas fa-image" style="color:var(--accent);font-size:14px"></i> Season Poster
+              </div>
+              <!-- Current poster preview -->
+              <div id="editSeasonPosterWrap" style="margin-bottom:10px;display:none">
+                <img id="editSeasonPosterImg" style="width:100%;max-height:140px;object-fit:cover;border-radius:8px;border:1.5px solid var(--border)"/>
+              </div>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <button type="button" onclick="document.getElementById('editSeasonPosterFile').click()"
+                  style="width:100%;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+                  <i class="fas fa-image"></i> Pick from Gallery
+                </button>
+                <input type="url" id="editSeasonPosterUrl" placeholder="Or paste image URL"
+                  style="padding:9px 12px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box;width:100%"
+                  oninput="previewEditSeasonPoster(this.value)"/>
+                <input type="file" id="editSeasonPosterFile" accept="image/*" style="display:none"
+                  onchange="handleEditSeasonPosterFile(this)"/>
+                <button onclick="saveSeasonPoster()"
+                  style="width:100%;background:var(--accent);border:none;border-radius:8px;padding:11px;color:#fff;font-size:13px;font-weight:700;font-family:'Poppins',sans-serif;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);display:flex;align-items:center;justify-content:center;gap:6px">
+                  <i class="fas fa-floppy-disk"></i> Save Poster
+                </button>
+              </div>
+            </div>
+            <!-- Season Reorder Box -->
+            <div style="background:var(--card-bg);border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;box-shadow:0 3px 0 var(--btn-3d)">
+              <div style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:7px">
+                <i class="fas fa-grip-lines" style="color:var(--accent);font-size:14px"></i> Reorder Seasons
+              </div>
+              <div style="font-size:11px;color:var(--text2);margin-bottom:10px">Hold &amp; drag a season up or down to reorder</div>
+              <div id="seasonReorderList" style="display:flex;flex-direction:column;gap:6px"></div>
+              <button onclick="saveSeasonOrder()" id="saveOrderBtn"
+                style="width:100%;margin-top:10px;display:none;background:var(--accent);border:none;border-radius:8px;padding:11px;color:#fff;font-size:13px;font-weight:700;font-family:'Poppins',sans-serif;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);display:none;align-items:center;justify-content:center;gap:6px">
+                <i class="fas fa-floppy-disk"></i> Save Order
+              </button>
+            </div>
+            <div class="tg-admin-box">
+              <div class="tg-admin-header">
+                <i class="fas fa-pen-to-square"
+                  style="color:var(--accent);font-size:18px;flex-shrink:0"></i>
+                <div>
+                  <div style="font-weight:700;font-size:14px">
+                    Edit Season TG Packs</div>
+                  <div style="font-size:11px;color:var(--text2);margin-top:2px">
+                    Edit/add packs or manage episodes
+                  </div>
+                </div>
+              </div>
+              <div id="existingPacksList" style="margin-bottom:14px"></div>
+              <!-- Add new pack -->
+              <div style="background:var(--bg2);border-radius:10px;
+                padding:12px;border:1px dashed var(--border)">
+                <div style="font-size:13px;font-weight:700;
+                  color:var(--text);margin-bottom:12px">
+                  <i class="fas fa-plus"
+                    style="color:var(--accent)"></i> New Pack
+                </div>
+                <div class="form-group"><label>RANGE *</label>
+                  <input type="text" id="new_pack_range"
+                    placeholder="e.g. 26-50"/></div>
+                <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Quality Links</div>
+                <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
+                  <div style="display:flex;gap:8px">
+                    <input type="text" id="npk_ql" placeholder="e.g. 720p" maxlength="12"
+                      style="width:85px;flex-shrink:0;padding:9px 10px;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;outline:none;box-sizing:border-box"/>
+                    <input type="url" id="npk_qu" placeholder="Telegram link"
+                      style="flex:1;padding:9px 10px;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+                  </div>
+                  <button onclick="addNpkQ()"
+                    style="width:100%;box-sizing:border-box;background:var(--accent);border:none;border-radius:8px;padding:10px;color:#fff;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);font-size:13px;font-weight:700;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px">
+                    <i class="fas fa-plus"></i> Add Quality
+                  </button>
+                </div>
+                <div id="npk_qd" style="display:flex;flex-wrap:wrap;gap:6px;min-height:24px;margin-bottom:10px">
+                  <span style="font-size:11px;color:var(--text2);font-style:italic">No qualities added yet</span>
+                </div>
+                <div class="form-group"><label>OR SINGLE LINK</label>
+                  <input type="url" id="new_pack_single"/></div>
+                <button class="btn-outline"
+                  onclick="addNewPack()" style="width:100%">
+                  <i class="fab fa-telegram"></i> Add Pack
+                </button>
+              </div>
+              <div style="display:flex;gap:10px;margin-top:12px">
+                <button class="btn-primary" id="saveSeasonEditBtn"
+                  onclick="saveSeasonEdit()"
+                  style="flex:1">
+                  <i class="fas fa-floppy-disk"></i> Save Season Changes
+                </button>
+                <button
+                  onclick="deleteCurrentSeason()"
+                  style="background:rgba(229,9,20,0.1);border:1.5px solid #e50914;
+                    color:#e50914;border-radius:8px;padding:12px 16px;
+                    font-family:'Poppins',sans-serif;font-size:13px;font-weight:800;
+                    cursor:pointer;transition:all 0.15s;
+                    box-shadow:0 3px 0 rgba(229,9,20,0.3);flex-shrink:0">
+                  <i class="fas fa-trash"></i> Delete Season
+                </button>
+              </div>
+            </div>
+
+            <!-- Episodes list for this season -->
+            <div style="background:var(--bg3);border-radius:12px;
+              padding:14px;border:1px solid var(--border);
+              margin-top:14px;margin-bottom:14px">
+              <div style="display:flex;align-items:center;
+                justify-content:space-between;margin-bottom:12px">
+                <div style="font-weight:700;font-size:14px;color:var(--text);
+                  display:flex;align-items:center;gap:6px">
+                  <i class="fas fa-film"
+                    style="color:var(--accent)"></i> Episodes
+                </div>
+                <span id="seasonEpCount"
+                  style="font-size:12px;color:var(--text2)"></span>
+              </div>
+              <div id="seasonEpisodesList"></div>
+            </div>
+          </div>
+
+          <!-- EPISODE FORM -->
+          <div style="background:var(--bg3);border-radius:12px;
+            padding:14px;border:1px solid var(--border);margin:0 0 16px">
+            <div style="display:flex;align-items:center;
+              justify-content:space-between;margin-bottom:14px;
+              flex-wrap:wrap;gap:8px">
+              <div style="font-weight:700;font-size:14px;color:var(--text);
+                display:flex;align-items:center;gap:6px">
+                <i class="fas fa-circle-play"
+                  style="color:var(--accent)"></i> Episode Details
+              </div>
+              <span style="font-size:11px;color:var(--text2);
+                background:var(--bg2);padding:3px 10px;
+                border-radius:10px;border:1px solid var(--border)">
+                Optional if season TG added
+              </span>
+            </div>
+            <div class="form-group"><label>EPISODE NUMBER</label>
+              <input type="number" id="ep_num" placeholder="1"/></div>
+            <div class="form-group"><label>EPISODE TITLE</label>
+              <input type="text" id="ep_title"
+                placeholder="Episode title"/></div>
+            <div class="form-group"><label>DESCRIPTION</label>
+              <textarea id="ep_desc"
+                placeholder="What happens..."></textarea></div>
+            <div class="form-group"><label>DURATION</label>
+              <input type="text" id="ep_duration"
+                placeholder="23 min"/></div>
+            <!-- Thumbnail -->
+            <div class="form-group">
+              <label>THUMBNAIL</label>
+              <input type="hidden" id="ep_thumb"/>
+              <div style="display:flex;gap:10px;align-items:center">
+                <div id="epThumbPreview"
+                  style="width:80px;height:45px;border-radius:6px;
+                    background:var(--bg3);border:1px solid var(--border);
+                    display:flex;align-items:center;justify-content:center;
+                    overflow:hidden;flex-shrink:0">
+                  <i class="fas fa-image"
+                    style="color:var(--text2);font-size:14px"></i>
+                </div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px">
+                  <button class="btn-outline"
+                    onclick="document.getElementById('epThumbInput').click()"
+                    style="font-size:12px">
+                    <i class="fas fa-image"
+                      style="color:var(--accent)"></i> Gallery
+                  </button>
+                  <input type="url" id="ep_thumb_url"
+                    placeholder="Or paste URL"
+                    oninput="onImgUrl(this.value,'ep_thumb','epThumbPreview')"/>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- VIDEO URLS -->
+          <div style="background:var(--bg3);border-radius:12px;
+            padding:14px;border:1px solid var(--border);margin-bottom:16px">
+            <div style="font-weight:700;font-size:14px;margin-bottom:4px;
+              color:var(--text);display:flex;align-items:center;gap:6px">
+              <i class="fas fa-play-circle"
+                style="color:var(--accent)"></i> Video URLs
+              <span style="font-size:11px;font-weight:400;
+                color:var(--text2)">(optional)</span>
+            </div>
+            <p style="font-size:11px;color:var(--text2);
+              margin-bottom:14px;line-height:1.6">
+              YouTube / Google Drive / Direct MP4/MKV links.
+              If added, video plays on website — no Telegram shown.
+            </p>
+
+            <!-- Language tabs -->
+            <div style="display:flex;gap:8px;overflow-x:auto;
+              padding-bottom:10px;scrollbar-width:none;margin-bottom:14px"
+              id="langTabsBar">
+              <button class="season-tab active"
+                onclick="switchLangTab('Japanese',this)"
+                style="flex-shrink:0">Japanese</button>
+              <button class="season-tab"
+                onclick="switchLangTab('English Dub',this)"
+                style="flex-shrink:0">English Dub</button>
+              <button class="season-tab"
+                onclick="switchLangTab('Hindi Dub',this)"
+                style="flex-shrink:0">Hindi Dub</button>
+              <button class="season-tab"
+                onclick="switchLangTab('Custom',this)"
+                style="flex-shrink:0">+ Custom</button>
+            </div>
+            <div id="customLangField"
+              style="display:none;margin-bottom:12px">
+              <div class="form-group" style="margin-bottom:0">
+                <label>CUSTOM LANGUAGE</label>
+                <input type="text" id="customLangName"
+                  placeholder="e.g. Korean..."/>
+              </div>
+            </div>
+            <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Add Quality</div>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
+              <div style="display:flex;gap:8px">
+                <input type="text" id="lq_ql" placeholder="e.g. 1080p" maxlength="12"
+                  style="width:85px;flex-shrink:0;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;outline:none;box-sizing:border-box"/>
+                <input type="url" id="lq_qu" placeholder="URL or Drive link"
+                  style="flex:1;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+              </div>
+              <button onclick="addLqQ()"
+                style="width:100%;box-sizing:border-box;background:var(--accent);border:none;border-radius:8px;padding:10px;color:#fff;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);font-size:13px;font-weight:700;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px">
+                <i class="fas fa-plus"></i> Add Quality
+              </button>
+            </div>
+            <div id="lq_qd" style="display:flex;flex-wrap:wrap;gap:6px;min-height:24px;margin-bottom:12px">
+              <span style="font-size:11px;color:var(--text2);font-style:italic">No qualities added yet</span>
+            </div>
+            <button class="btn-outline" onclick="saveLangUrls()"
+              style="width:100%;margin-bottom:12px">
+              <i class="fas fa-floppy-disk"></i> Save Language URLs
+            </button>
+
+            <!-- Gallery video upload -->
+            <div style="border-top:1px solid var(--border);padding-top:12px">
+              <div style="font-size:13px;font-weight:700;
+                color:var(--text);margin-bottom:6px">
+                <i class="fas fa-upload"
+                  style="color:var(--accent)"></i> Upload from Gallery
+                <span style="font-size:11px;font-weight:400;
+                  color:var(--text2)"> → GoFile.io</span>
+              </div>
+              <div id="uploadStatus" style="display:none;
+                background:var(--bg2);border:1px solid var(--border);
+                border-radius:10px;padding:12px;margin-bottom:10px">
+                <div style="display:flex;align-items:center;
+                  gap:10px;margin-bottom:8px">
+                  <i id="uploadIcon"
+                    class="fas fa-circle-notch fa-spin"
+                    style="color:var(--accent);font-size:18px;flex-shrink:0"></i>
+                  <div>
+                    <div style="font-size:13px;font-weight:600;
+                      color:var(--text)" id="uploadFileName">Uploading...</div>
+                    <div style="font-size:11px;color:var(--text2)"
+                      id="uploadSubText"></div>
+                  </div>
+                </div>
+                <div style="height:6px;background:var(--bg3);
+                  border-radius:3px;overflow:hidden">
+                  <div id="uploadProgressBar"
+                    style="height:100%;background:var(--accent);
+                      border-radius:3px;width:0%;transition:width 0.3s"></div>
+                </div>
+                <div style="font-size:11px;color:var(--text2);
+                  text-align:right;margin-top:4px"
+                  id="uploadPercent">0%</div>
+              </div>
+              <button class="btn-outline"
+                id="selectVideoBtn"
+                onclick="document.getElementById('adminVideoInput').click()"
+                style="width:100%">
+                <i class="fas fa-folder-open"
+                  style="color:var(--accent)"></i> Select Video File
+              </button>
+            </div>
+
+            <div id="savedLangsPreview" style="margin-top:10px"></div>
+          </div>
+
+          <!-- EPISODE TELEGRAM -->
+          <div class="tg-admin-box" style="margin-bottom:16px">
+            <div class="tg-admin-header">
+              <i class="fab fa-telegram"
+                style="color:#2ca5e0;font-size:20px;flex-shrink:0"></i>
+              <div>
+                <div style="font-weight:700;font-size:14px">
+                  Episode TG Link
+                  <span style="font-size:11px;font-weight:400;
+                    color:var(--text2)">(optional)</span>
+                </div>
+                <div style="font-size:11px;color:var(--text2);margin-top:2px">
+                  Only shown if no video URL added for this episode.
+                </div>
+              </div>
+            </div>
+            <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Quality Links</div>
+            <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
+              <div style="display:flex;gap:8px">
+                <input type="text" id="etg_ql" placeholder="e.g. 720p" maxlength="12"
+                  style="width:85px;flex-shrink:0;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;outline:none;box-sizing:border-box"/>
+                <input type="url" id="etg_qu" placeholder="Telegram link"
+                  style="flex:1;padding:9px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+              </div>
+              <button onclick="addEtgQ()"
+                style="width:100%;box-sizing:border-box;background:var(--accent);border:none;border-radius:8px;padding:10px;color:#fff;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);font-size:13px;font-weight:700;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px">
+                <i class="fas fa-plus"></i> Add Quality
+              </button>
+            </div>
+            <div id="etg_qd" style="display:flex;flex-wrap:wrap;gap:6px;min-height:24px;margin-bottom:12px">
+              <span style="font-size:11px;color:var(--text2);font-style:italic">No qualities added yet</span>
+            </div>
+            <div class="form-group" style="margin-bottom:0"><label>OR SINGLE LINK</label>
+              <input type="url" id="etg_single"/></div>
+          </div>
+
+          <button class="btn-primary" id="addEpBtn"
+            onclick="addEpisode()" style="width:100%">
+            <i class="fas fa-film"></i> Add Episode
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== TAB: NEWS ===== -->
+      <div class="admin-panel" id="tab-news">
+        <div class="admin-card">
+          <h3><i class="fas fa-newspaper" style="color:var(--accent)"></i> Post News</h3>
+
+          <!-- Media picker -->
+          <div class="form-group">
+            <label>MEDIA (PHOTO OR VIDEO)</label>
+            <div style="display:flex;gap:8px;margin-bottom:8px">
+              <button type="button" id="newsMediaTypeImg" onclick="setNewsMediaType('image')"
+                style="flex:1;padding:10px;background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d)">
+                <i class="fas fa-image"></i> Photo
+              </button>
+              <button type="button" id="newsMediaTypeVid" onclick="setNewsMediaType('video')"
+                style="flex:1;padding:10px;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;color:var(--text2);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d)">
+                <i class="fas fa-video"></i> Video
+              </button>
+            </div>
+            <!-- Preview -->
+            <div id="newsMediaPreviewWrap" style="margin-bottom:8px;display:none;border-radius:10px;overflow:hidden;border:1.5px solid var(--border)">
+              <img id="newsMediaPreviewImg" style="width:100%;max-height:180px;object-fit:cover;display:none"/>
+              <video id="newsMediaPreviewVid" style="width:100%;max-height:180px;display:none" muted playsinline loop></video>
+            </div>
+            <button type="button" onclick="document.getElementById('newsMediaFile').click()"
+              style="width:100%;box-sizing:border-box;background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);display:flex;align-items:center;justify-content:center;gap:6px">
+              <i class="fas fa-image"></i> Pick from Gallery
+            </button>
+            <input type="file" id="newsMediaFile" style="display:none" accept="image/*,video/*"
+              onchange="handleNewsMedia(this)"/>
+            <input type="url" id="newsMediaUrl" placeholder="Or paste image/video URL"
+              style="margin-top:6px;width:100%;box-sizing:border-box;padding:10px 12px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none"
+              oninput="handleNewsMediaUrl(this.value)"/>
+          </div>
+
+          <div class="form-group">
+            <label>HEADLINE *</label>
+            <input type="text" id="news_headline" placeholder="Breaking: ..."/>
+          </div>
+
+          <div class="form-group">
+            <label>DESCRIPTION</label>
+            <textarea id="news_desc" rows="5" placeholder="Full news description..."
+              style="width:100%;box-sizing:border-box;padding:10px 12px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:13px;outline:none;resize:vertical"></textarea>
+          </div>
+
+          <button class="btn-primary" id="postNewsBtn" onclick="postNews()" style="width:100%;box-sizing:border-box">
+            <i class="fas fa-paper-plane"></i> Post News
+          </button>
+          <div id="newsSuccess" style="display:none;margin-top:10px;padding:10px 14px;background:rgba(39,174,96,0.15);border:1px solid #27ae60;border-radius:8px;color:#27ae60;font-size:13px;font-weight:700">
+            <i class="fas fa-check"></i> News posted successfully!
+          </div>
+        </div>
+
+        <!-- Manage existing news -->
+        <div class="admin-card">
+          <h3><i class="fas fa-list" style="color:var(--accent)"></i> Existing News</h3>
+          <div id="newsList" style="display:flex;flex-direction:column;gap:8px">
+            <div style="text-align:center;color:var(--text2);padding:20px;font-size:12px"><i class="fas fa-circle-notch fa-spin"></i> Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== TAB: GUIDE ===== -->
+      <div class="admin-panel" id="tab-guide">
+        <div class="admin-card">
+          <h3><i class="fas fa-book" style="color:var(--accent)"></i>
+            Guide</h3>
+          <div style="background:var(--bg3);border-radius:10px;
+            padding:14px;margin-bottom:12px;border-left:3px solid #0f9d58">
+            <div style="font-weight:700;margin-bottom:8px">
+              <i class="fab fa-google-drive" style="color:#0f9d58"></i>
+              Google Drive (Recommended)
+            </div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.8">
+              Upload video → Right click → Share → Anyone with link → Copy link → Paste in Video URL field.<br>
+              <strong style="color:var(--accent)">Video will play directly on the website!</strong>
+            </div>
+          </div>
+          <div style="background:var(--bg3);border-radius:10px;
+            padding:14px;margin-bottom:12px;border-left:3px solid #ff0000">
+            <div style="font-weight:700;margin-bottom:8px">
+              <i class="fab fa-youtube" style="color:#ff0000"></i>
+              YouTube
+            </div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.8">
+              Upload → Visibility: <strong>Unlisted</strong>
+              → Share → Copy → Paste in Video URL
+            </div>
+          </div>
+          <div class="tg-admin-box">
+            <div class="tg-admin-header">
+              <i class="fab fa-telegram"
+                style="color:#2ca5e0;font-size:20px;flex-shrink:0"></i>
+              <div style="font-weight:700;font-size:14px">
+                When to use Telegram
+              </div>
+            </div>
+            <div style="font-size:13px;color:var(--text2);line-height:1.9">
+              <strong style="color:var(--text)">Season Pack:</strong>
+              Add when all episodes of a season are in one Telegram folder/post.
+              These buttons show on the anime detail page only.<br><br>
+              <strong style="color:var(--text)">Episode TG Link:</strong>
+              Add only if you DON'T have a Drive/YouTube video for that episode.
+              If video URL exists, Telegram is automatically hidden.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="data.js"></script>
+  <script>
+    const ADMIN_PASSWORD   = '007007';
+
+    // ===== LOGIN — defined first so a crash below never breaks login =====
+    window.checkLogin = function() {
+      try {
+        const val = document.getElementById('adminPass').value;
+        if (val === ADMIN_PASSWORD) {
+          document.getElementById('loginScreen').style.display    = 'none';
+          document.getElementById('adminDashboard').style.display = 'block';
+          document.getElementById('loginError').style.display     = 'none';
+          sessionStorage.setItem('av_admin','1');
+          initDashboard();
+        } else {
+          document.getElementById('loginError').style.display = 'block';
+          document.getElementById('adminPass').value = '';
+        }
+      } catch(e) { console.error('Login error:', e); }
+    };
+    window.togglePassView = function() {
+      const inp  = document.getElementById('adminPass');
+      const icon = document.getElementById('eyeIcon');
+      inp.type = inp.type === 'password' ? 'text' : 'password';
+      icon.className = inp.type === 'password' ? 'fas fa-eye' : 'fas fa-eye-slash';
+    };
+    window.logout = function() {
+      sessionStorage.removeItem('av_admin'); location.reload();
+    };
+    let currentLangTab     = 'Japanese';
+    let episodeLangData    = {};
+    let editingSeasonPacks = [];
+    let editingSeasonId    = null;
+    let editingAnimeId     = null;
+    let seasonEpsRef       = [];
+    let allAnimeCache      = [];
+    let currentTab         = 'add';
+
+    // ===== DYNAMIC QUALITY STATE =====
+    let stgQualities = {};
+    let newPackQs    = {};
+    let etgQualities = {};
+    let lqQualities  = {};
+
+    // ===== QUALITY COLOUR =====
+    function qClr(lbl) {
+      const l = String(lbl||'').toLowerCase();
+      if(l.includes('8k'))                     return{bg:'#c0392b',sh:'#7b241c'};
+      if(l.includes('4k')||l.includes('2160')) return{bg:'#C87740',sh:'#8a5229'};
+      if(l.includes('2k')||l.includes('1440')) return{bg:'#8e44ad',sh:'#6c3483'};
+      if(l.includes('1080'))                   return{bg:'#27ae60',sh:'#1a7a43'};
+      if(l.includes('720'))                    return{bg:'#2a6dd9',sh:'#1a4da0'};
+      if(l.includes('480'))                    return{bg:'#607d8b',sh:'#37474f'};
+      if(l.includes('360'))                    return{bg:'#78909c',sh:'#546e7a'};
+      if(l.includes('240'))                    return{bg:'#90a4ae',sh:'#607d8b'};
+      return{bg:'#9787F3',sh:'#5a4cb8'};
+    }
+
+    function renderQTags(obj, cid, rfn) {
+      const c = document.getElementById(cid); if(!c) return;
+      const ks = Object.keys(obj);
+      if(!ks.length){c.innerHTML='<span style="font-size:11px;color:var(--text2);font-style:italic">No qualities added yet</span>';return;}
+      c.innerHTML = ks.map(k=>{
+        const{bg,sh}=qClr(k);
+        return `<div style="display:inline-flex;align-items:stretch;border-radius:7px;overflow:hidden;box-shadow:0 3px 0 ${sh}">
+          <span style="background:${bg};color:#fff;font-size:11px;font-weight:800;padding:6px 9px;font-family:'Poppins',sans-serif">${k}</span>
+          <button onclick="${rfn}('${k.replace(/'/g,"\\'")}')" style="background:${bg};filter:brightness(0.7);border:none;color:#fff;padding:6px 8px;cursor:pointer;font-size:13px;line-height:1;font-weight:700">×</button>
+        </div>`;
+      }).join(' ');
+    }
+
+    function addStgQ(){const l=document.getElementById('stg_ql').value.trim(),u=document.getElementById('stg_qu').value.trim();if(!l||!u){alert('Enter quality name and link!');return;}stgQualities[l]=u;renderQTags(stgQualities,'stg_qd','removeStgQ');document.getElementById('stg_ql').value='';document.getElementById('stg_qu').value='';}
+    window.removeStgQ=function(q){delete stgQualities[q];renderQTags(stgQualities,'stg_qd','removeStgQ');};
+
+    function addNpkQ(){const l=document.getElementById('npk_ql').value.trim(),u=document.getElementById('npk_qu').value.trim();if(!l||!u){alert('Enter quality name and link!');return;}newPackQs[l]=u;renderQTags(newPackQs,'npk_qd','removeNpkQ');document.getElementById('npk_ql').value='';document.getElementById('npk_qu').value='';}
+    window.removeNpkQ=function(q){delete newPackQs[q];renderQTags(newPackQs,'npk_qd','removeNpkQ');};
+
+    function addEtgQ(){const l=document.getElementById('etg_ql').value.trim(),u=document.getElementById('etg_qu').value.trim();if(!l||!u){alert('Enter quality name and link!');return;}etgQualities[l]=u;renderQTags(etgQualities,'etg_qd','removeEtgQ');document.getElementById('etg_ql').value='';document.getElementById('etg_qu').value='';}
+    window.removeEtgQ=function(q){delete etgQualities[q];renderQTags(etgQualities,'etg_qd','removeEtgQ');};
+
+    function addLqQ(){const l=document.getElementById('lq_ql').value.trim(),u=document.getElementById('lq_qu').value.trim();if(!l||!u){alert('Enter quality name and URL!');return;}lqQualities[l]=u;renderQTags(lqQualities,'lq_qd','removeLqQ');document.getElementById('lq_ql').value='';document.getElementById('lq_qu').value='';}
+    window.removeLqQ=function(q){delete lqQualities[q];renderQTags(lqQualities,'lq_qd','removeLqQ');};
+
+    window.addPackQ=function(idx){
+      const l=document.getElementById(`pk_${idx}_ql`)?.value.trim(),u=document.getElementById(`pk_${idx}_qu`)?.value.trim();
+      if(!l||!u){alert('Enter quality and link!');return;}
+      if(!editingSeasonPacks[idx].links)editingSeasonPacks[idx].links={};
+      editingSeasonPacks[idx].links[l]=u;
+      delete editingSeasonPacks[idx].single;
+      renderExistingPacks();
+    };
+    window.removePackQ=function(idx,q){
+      if(!editingSeasonPacks[idx]?.links)return;
+      delete editingSeasonPacks[idx].links[q];
+      renderExistingPacks();
+    };
+
+    function resetQuality(){
+      stgQualities={};renderQTags(stgQualities,'stg_qd','removeStgQ');
+      newPackQs={};renderQTags(newPackQs,'npk_qd','removeNpkQ');
+      etgQualities={};renderQTags(etgQualities,'etg_qd','removeEtgQ');
+      lqQualities={};renderQTags(lqQualities,'lq_qd','removeLqQ');
+      ['stg_ql','stg_qu','stg_single','stg_range','etg_ql','etg_qu','etg_single','lq_ql','lq_qu','npk_ql','npk_qu','new_pack_range','new_pack_single']
+        .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    }
+
+    // ===== THEME =====
+    function toggleTheme() {
+      const html = document.documentElement;
+      const btn  = document.getElementById('themeBtn');
+      const dark = html.getAttribute('data-theme') === 'dark';
+      html.setAttribute('data-theme', dark ? 'light' : 'dark');
+      btn.innerHTML = dark ? '<i class="fas fa-sun"></i>'
+        : '<i class="fas fa-moon"></i>';
+      localStorage.setItem('av_theme', dark ? 'light' : 'dark');
+    }
+    function loadTheme() {
+      const saved = localStorage.getItem('av_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', saved);
+      const btn = document.getElementById('themeBtn');
+      if (btn) btn.innerHTML = saved === 'dark'
+        ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
+    }
+    // togglePassView, checkLogin, logout defined at top of script
+    function switchTab(tab, btn) {
+      currentTab = tab;
+      document.querySelectorAll('.admin-tab')
+        .forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.admin-panel')
+        .forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-'+tab).classList.add('active');
+      if (tab === 'manage') renderManageList();
+    }
+
+    // ===== IMAGE HELPERS =====
+    function compressImg(file, maxW=800, quality=0.8) {
+      return new Promise((res,rej) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = new Image();
+          img.onload = () => {
+            let w=img.width, h=img.height;
+            if (w>maxW) { h=(h*maxW)/w; w=maxW; }
+            const c = document.createElement('canvas');
+            c.width=w; c.height=h;
+            c.getContext('2d').drawImage(img,0,0,w,h);
+            res(c.toDataURL('image/jpeg',quality));
+          };
+          img.onerror=rej; img.src=e.target.result;
+        };
+        reader.onerror=rej; reader.readAsDataURL(file);
+      });
+    }
+    async function handleImgPick(input, fieldId, previewId) {
+      const file = input.files&&input.files[0];
+      if (!file) return; input.value='';
+      try {
+        const b64 = await compressImg(file, 800, 0.85);
+        document.getElementById(fieldId).value = b64;
+        setPreview(b64, previewId);
+      } catch(e) { alert('Could not load image.'); }
+    }
+    function onImgUrl(url, fieldId, previewId) {
+      document.getElementById(fieldId).value = url;
+      if (url && url.startsWith('http')) setPreview(url, previewId);
+    }
+    function setPreview(src, previewId) {
+      document.getElementById(previewId).innerHTML =
+        `<img src="${src}" style="width:100%;height:100%;
+          object-fit:cover;display:block"
+          onerror="this.parentElement.innerHTML='<i class=\\"fas fa-image\\" style=\\"color:var(--text2);font-size:16px\\"></i>'"/>`;
+    }
+
+    // ===== FIREBASE =====
+    // ===== REAL-TIME DATA LISTENER =====
+    // ── Data loading: show cache instantly, update from server in background ──
+    let _unsubscribeListener = null;
+
+    function sortData(data) {
+      return data.sort((a, b) => {
+        const ta = a.createdAt?.toDate?.()?.getTime?.() || 0;
+        const tb = b.createdAt?.toDate?.()?.getTime?.() || 0;
+        return tb - ta;
+      });
+    }
+
+    function applyData(data) {
+      allAnimeCache = data;
+      document.getElementById('statTotal').textContent  = data.length;
+      document.getElementById('statAnime').textContent  =
+        data.filter(a => (a.type||'').toLowerCase() === 'anime').length;
+      document.getElementById('statMovies').textContent =
+        data.filter(a => (a.type||'').toLowerCase() === 'movie').length;
+      document.getElementById('statSeries').textContent =
+        data.filter(a => (a.type||'').toLowerCase() === 'series').length;
+      document.getElementById('statNews').textContent =
+        data.filter(a => (a.type||'').toLowerCase() === 'news').length;
+      if (currentTab === 'manage') renderManageList();
+      populateAnimeDropdown();
+    }
+
+    function showLoadingState() {
+      const ml = document.getElementById('manageList');
+      if (ml && !allAnimeCache.length) {
+        ml.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text2)"><i class="fas fa-circle-notch fa-spin"></i> Loading...</div>';
+      }
+    }
+
+    async function loadFromCache() {
+      try {
+        const snap = await db.collection('anime').get({ source: 'cache' });
+        const data = [];
+        snap.forEach(doc => data.push({...doc.data(), firestoreId: doc.id}));
+        if (data.length > 0) applyData(sortData(data));
+      } catch(e) { /* cache empty */ }
+    }
+
+    function startRealtimeListener() {
+      if (_unsubscribeListener) { _unsubscribeListener(); _unsubscribeListener = null; }
+      showLoadingState();
+      // Show cached data instantly while server loads
+      loadFromCache();
+      // onSnapshot keeps data live from server
+      _unsubscribeListener = db.collection('anime').onSnapshot(
+        { includeMetadataChanges: false },
+        snap => {
+          const data = [];
+          snap.forEach(doc => data.push({...doc.data(), firestoreId: doc.id}));
+          applyData(sortData(data));
+        },
+        err => console.error('Snapshot error:', err)
+      );
+    }
+
+    async function getAllAnime() {
+      try {
+        const snap = await db.collection('anime').get({ source: 'server' });
+        const data = [];
+        snap.forEach(doc => data.push({...doc.data(), firestoreId: doc.id}));
+        return sortData(data);
+      } catch {
+        try {
+          const snap2 = await db.collection('anime').get({ source: 'cache' });
+          const data2 = [];
+          snap2.forEach(doc => data2.push({...doc.data(), firestoreId: doc.id}));
+          return sortData(data2);
+        } catch(e) { return []; }
+      }
+    }
+    async function forceReloadAllAnime() {
+      allAnimeCache = [];
+      const fresh = await getAllAnime();
+      allAnimeCache = fresh;
+      return fresh;
+    }
+
+        async function updateStats() {
+      const all = await forceReloadAllAnime();
+      document.getElementById('statTotal').textContent  = all.length;
+      document.getElementById('statAnime').textContent  =
+        all.filter(a => (a.type||'').toLowerCase() === 'anime').length;
+      document.getElementById('statMovies').textContent =
+        all.filter(a => (a.type||'').toLowerCase() === 'movie').length;
+      document.getElementById('statSeries').textContent =
+        all.filter(a => (a.type||'').toLowerCase() === 'series').length;
+      document.getElementById('statNews').textContent =
+        all.filter(a => (a.type||'').toLowerCase() === 'news').length;
+      if (currentTab === 'manage') renderManageList();
+    }
+
+    // ===== SEARCHABLE SELECT =====
+    const ssData = {
+      anime:  { options: [], selected: null },
+      season: { options: [], selected: null }
+    };
+
+    function toggleSS(name) {
+      const dd = document.getElementById('ss'+cap(name)+'Dropdown');
+      const ch = document.getElementById('ss'+cap(name)+'Chevron');
+      const open = !dd.classList.contains('hidden');
+      // Close all others
+      ['anime','season'].forEach(n => {
+        document.getElementById('ss'+cap(n)+'Dropdown').classList.add('hidden');
+        document.getElementById('ss'+cap(n)+'Chevron').style.transform = '';
+      });
+      if (!open) {
+        dd.classList.remove('hidden');
+        ch.style.transform = 'rotate(180deg)';
+        const si = document.getElementById('ss'+cap(name)+'Search');
+        si.value = ''; si.focus();
+        renderSSOptions(name, '');
+      }
+    }
+    function cap(s) { return s.charAt(0).toUpperCase()+s.slice(1); }
+
+    function searchSS(name, q) { renderSSOptions(name, q); }
+
+    function renderSSOptions(name, query) {
+      const el = document.getElementById('ss'+cap(name)+'Options');
+      const opts = ssData[name].options;
+      const filtered = query
+        ? opts.filter(o=>o.text.toLowerCase().includes(query.toLowerCase()))
+        : opts;
+      el.innerHTML = filtered.length
+        ? filtered.map(o => `
+          <div class="ss-option ${o.value===ssData[name].selected?'selected':''}"
+            onclick="pickSS('${name}','${o.value}','${o.text.replace(/'/g,"\\'")}')">
+            ${o.text}
+          </div>`).join('')
+        : `<div style="padding:12px;font-size:13px;
+            color:var(--text2);text-align:center">
+            No results</div>`;
+    }
+
+    function pickSS(name, value, text) {
+      ssData[name].selected = value;
+      document.getElementById('ss'+cap(name)+'Text').textContent = text;
+      document.getElementById('ss'+cap(name)+'Display').style.borderColor =
+        'var(--accent)';
+      document.getElementById('ep_'+name).value = value;
+      document.getElementById('ss'+cap(name)+'Dropdown').classList.add('hidden');
+      document.getElementById('ss'+cap(name)+'Chevron').style.transform = '';
+      if (name === 'anime') loadAnimeSeasons();
+      if (name === 'season') onSeasonChange();
+    }
+
+    // Close dropdowns on outside click
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.ss-wrap')) {
+        document.querySelectorAll('.ss-dropdown')
+          .forEach(d=>d.classList.add('hidden'));
+        document.querySelectorAll('[id$="Chevron"]')
+          .forEach(c=>{ if(c.id.startsWith('ss')) c.style.transform=''; });
+      }
+    });
+
+    // ===== POPULATE DROPDOWNS =====
+    async function populateAnimeDropdown() {
+      const all = await getAllAnime();
+      allAnimeCache = all;
+      ssData.anime.options = all.map(a => ({
+        value: a.firestoreId,
+        text:  a.title
+      }));
+      // Reset display
+      ssData.anime.selected = null;
+      document.getElementById('ssAnimeText').textContent = '-- Select Anime --';
+      document.getElementById('ssAnimeDisplay').style.borderColor = '';
+      document.getElementById('ep_anime').value = '';
+      // Reset season too
+      ssData.season.options = [{ value:'new', text:'+ Add New Season' }];
+      ssData.season.selected = null;
+      document.getElementById('ssSeasonText').textContent = '-- Select Season --';
+      document.getElementById('ssSeasonDisplay').style.borderColor = '';
+      document.getElementById('ep_season').value = '';
+    }
+
+    async function loadAnimeSeasons() {
+      const animeId = document.getElementById('ep_anime').value;
+      // Reset season dropdown
+      ssData.season.options = [{ value:'new', text:'+ Add New Season' }];
+      ssData.season.selected = null;
+      document.getElementById('ssSeasonText').textContent = '-- Select Season --';
+      document.getElementById('ssSeasonDisplay').style.borderColor = '';
+      document.getElementById('ep_season').value = '';
+      document.getElementById('newSeasonFields').style.display = 'none';
+      document.getElementById('editSeasonSection').style.display = 'none';
+      editingSeasonPacks=[]; editingSeasonId=null;
+
+      if (!animeId) return;
+      const doc = await db.collection('anime').doc(animeId).get();
+      if (!doc.exists) return;
+      const seasons = doc.data().seasons || [];
+      // Prepend existing seasons before "new"
+      const existing = seasons.map(s => ({ value: String(s.id), text: s.title }));
+      ssData.season.options = [
+        ...existing,
+        { value:'new', text:'+ Add New Season' }
+      ];
+      // Populate parent season select for new season form
+      const parentSel = document.getElementById('new_season_parent');
+      if (parentSel) {
+        parentSel.innerHTML = '<option value="">— No parent (top-level season) —</option>';
+        // Only show seasons that have no parentId themselves (top-level only)
+        seasons.filter(s => !s.parentId).forEach(s => {
+          const opt = document.createElement('option');
+          opt.value = s.id; opt.textContent = s.title;
+          parentSel.appendChild(opt);
+        });
+      }
+    }
+
+    function onSeasonChange() {
+      const val = document.getElementById('ep_season').value;
+      document.getElementById('newSeasonFields').style.display =
+        val === 'new' ? 'block' : 'none';
+      document.getElementById('editSeasonSection').style.display =
+        (val && val !== 'new') ? 'block' : 'none';
+      if (val && val !== 'new') loadSeasonEditData(val);
+    }
+
+    // ===== ADD ANIME =====
+    async function addAnime() {
+      const title = document.getElementById('a_title').value.trim();
+      const thumb = document.getElementById('a_thumb').value ||
+        document.getElementById('a_thumb_url').value.trim();
+      if (!title) { alert('Title required!'); return; }
+      if (!thumb) { alert('Cover image required!'); return; }
+      const btn = document.getElementById('addAnimeBtn');
+      btn.innerHTML='<i class="fas fa-circle-notch fa-spin"></i> Saving...';
+      btn.disabled=true;
+      const isTop10 = document.getElementById('a_top10').checked;
+      const anime = {
+        title, type: document.getElementById('a_type').value,
+        genre: document.getElementById('a_genre').value
+          .split(',').map(g=>g.trim()).filter(Boolean),
+        rating: parseFloat(document.getElementById('a_rating').value)||0,
+        year:   parseInt(document.getElementById('a_year').value)||new Date().getFullYear(),
+        status: document.getElementById('a_status').value,
+        studio: document.getElementById('a_studio').value.trim(),
+        thumbnail: thumb,
+        banner: document.getElementById('a_banner').value||
+          document.getElementById('a_banner_url').value.trim()||thumb,
+        description: document.getElementById('a_desc').value.trim(),
+        trending: document.getElementById('a_trending').checked,
+        latest:   document.getElementById('a_latest').checked,
+        top10: isTop10,
+        top10AddedAt: isTop10 ? Date.now() : 0,
+        seasons:[],
+        published: false,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      try {
+        await db.collection('anime').add(anime);
+        document.getElementById('addSuccess').style.display='block';
+        setTimeout(()=>document.getElementById('addSuccess').style.display='none',3000);
+        ['a_title','a_genre','a_rating','a_year','a_studio',
+         'a_thumb','a_thumb_url','a_banner','a_banner_url','a_desc']
+          .forEach(id=>{const el=document.getElementById(id);if(el) el.value='';});
+        ['a_trending','a_latest','a_top10']
+          .forEach(id=>{document.getElementById(id).checked=false;});
+        ['coverPreview','bannerPreview'].forEach(id=>{
+          const el=document.getElementById(id);
+          if(el) el.innerHTML='<i class="fas fa-image" style="color:var(--text2);font-size:18px"></i>';
+        });
+        updateStats(); populateAnimeDropdown();
+      } catch(e) {
+        document.getElementById('addError').textContent='Error: '+e.message;
+        document.getElementById('addError').style.display='block';
+      } finally {
+        btn.innerHTML='<i class="fas fa-plus"></i> Add to Website';
+        btn.disabled=false;
+      }
+    }
+
+    // ===== MANAGE LIST =====
+     async function renderManageList(filter) {
+      let list = allAnimeCache;
+      if (!list.length) {
+        list = await getAllAnime();
+        allAnimeCache = list;
+      }
+      if (filter) {
+        list = list.filter(a => a.title.toLowerCase().includes(filter.toLowerCase()));
+      }
+      const c = document.getElementById('manageList');
+      const e = document.getElementById('manageEmpty');
+      c.innerHTML='';
+      if (!list.length) { e.style.display='block'; return; }
+      e.style.display='none';
+      list.forEach(anime=>{
+        const totalEps=(anime.seasons||[])
+          .reduce((s,sec)=>s+(sec.episodes||[]).length,0);
+        const item=document.createElement('div');
+        item.className='anime-manage-item';
+        item.innerHTML=`
+          <img class="anime-manage-thumb"
+            src="${anime.thumbnail||''}"
+            onerror="this.style.background='var(--bg3)'"/>
+          <div class="anime-manage-info">
+            <strong>${anime.title}${anime.published===false?'&nbsp;<span style="background:#e67e22;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px;vertical-align:middle">DRAFT</span>':''}</strong>
+            <span>${(anime.type||'').toUpperCase()} · ${anime.year||''} ·
+              ${(anime.seasons||[]).length} season(s) · ${totalEps} ep(s)</span>
+          </div>
+          <div class="anime-manage-actions" style="display:flex;gap:6px;flex-wrap:wrap">
+            ${anime.published===false?`
+            <button class="btn-sm"
+              style="background:#27ae60;color:#fff;border:none;border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px;font-weight:700;white-space:nowrap"
+              onclick="publishAnime('${anime.firestoreId}')">
+              <i class="fas fa-rocket"></i> Publish
+            </button>`:`
+            <button class="btn-sm"
+              style="background:var(--bg3);border:1px solid var(--border);color:var(--text2);border-radius:6px;padding:6px 10px;cursor:pointer;font-size:12px"
+              onclick="unpublishAnime('${anime.firestoreId}')">
+              <i class="fas fa-eye-slash"></i>
+            </button>`}
+            <button class="btn-sm"
+              style="background:var(--bg3);border:1px solid var(--border);
+                color:var(--text2);border-radius:6px;padding:6px 10px;
+                cursor:pointer;font-size:13px"
+              onclick="openEditAnime('${anime.firestoreId}')">
+              <i class="fas fa-pen"></i>
+            </button>
+            <button class="btn-sm delete"
+              onclick="deleteAnime('${anime.firestoreId}',
+                '${anime.title.replace(/'/g,"\\'")}')">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>`;
+        c.appendChild(item);
+      });
+    }
+
+    function filterManageList(query) {
+      renderManageList(query);
+    }
+
+    async function publishAnime(id) {
+      await db.collection('anime').doc(id).update({ published: true });
+      const idx = allAnimeCache.findIndex(a=>a.firestoreId===id);
+      if (idx!==-1) allAnimeCache[idx].published = true;
+      renderManageList(); updateStats();
+    }
+
+    async function unpublishAnime(id) {
+      if (!confirm('Hide this anime from the website? You can re-publish anytime.')) return;
+      await db.collection('anime').doc(id).update({ published: false });
+      const idx = allAnimeCache.findIndex(a=>a.firestoreId===id);
+      if (idx!==-1) allAnimeCache[idx].published = false;
+      renderManageList(); updateStats();
+    }
+
+    // ===== DELETE ANIME =====
+    async function deleteAnime(id, title) {
+      if (!confirm(`Delete "${title}"? Cannot be undone.`)) return;
+      await db.collection('anime').doc(id).delete();
+      allAnimeCache = allAnimeCache.filter(a=>a.firestoreId!==id);
+      renderManageList(); updateStats(); populateAnimeDropdown();
+    }
+
+    // ===== EDIT ANIME =====
+    async function openEditAnime(id) {
+      const doc = await db.collection('anime').doc(id).get();
+      if (!doc.exists) return;
+      const d = doc.data();
+      document.getElementById('edit_anime_id').value = id;
+      document.getElementById('edit_title').value   = d.title||'';
+      document.getElementById('edit_type').value    = d.type||'anime';
+      document.getElementById('edit_genre').value   = (d.genre||[]).join(', ');
+      document.getElementById('edit_rating').value  = d.rating||'';
+      document.getElementById('edit_year').value    = d.year||'';
+      document.getElementById('edit_status').value  = d.status||'Ongoing';
+      document.getElementById('edit_studio').value  = d.studio||'';
+      document.getElementById('edit_thumb').value   = d.thumbnail||'';
+      document.getElementById('edit_banner').value  = d.banner||'';
+      prefillEditPreviews(d.thumbnail||'', d.banner||'');
+      document.getElementById('edit_desc').value    = d.description||'';
+      document.getElementById('edit_trending').checked = !!d.trending;
+      document.getElementById('edit_latest').checked   = !!d.latest;
+      document.getElementById('edit_top10').checked    = !!d.top10;
+      const isPublished = d.published !== false;
+      document.getElementById('edit_published').checked = isPublished;
+      document.getElementById('edit_published_label').textContent = isPublished ? 'Live' : 'Draft';
+      document.getElementById('edit_published_label').style.color = isPublished ? '#27ae60' : '#e67e22';
+      document.getElementById('edit_published').onchange = function() {
+        document.getElementById('edit_published_label').textContent = this.checked ? 'Live' : 'Draft';
+        document.getElementById('edit_published_label').style.color = this.checked ? '#27ae60' : '#e67e22';
+      };
+      document.getElementById('editAnimeModal').style.display = 'block';
+      document.getElementById('editAnimeSuccess').style.display = 'none';
+      document.getElementById('editAnimeError').style.display   = 'none';
+    }
+
+    function closeEditAnime() {
+      document.getElementById('editAnimeModal').style.display = 'none';
+    }
+
+    async function saveEditAnime() {
+      const id = document.getElementById('edit_anime_id').value;
+      if (!id) return;
+      const btn = document.getElementById('saveEditAnimeBtn');
+      btn.innerHTML='<i class="fas fa-circle-notch fa-spin"></i> Saving...';
+      btn.disabled=true;
+      try {
+        const thumb = document.getElementById('edit_thumb').value.trim();
+        const nowTop10  = document.getElementById('edit_top10').checked;
+        const wasTop10  = !!allAnimeCache.find(a=>a.firestoreId===id)?.top10;
+        const update = {
+          title:       document.getElementById('edit_title').value.trim(),
+          type:        document.getElementById('edit_type').value,
+          genre:       document.getElementById('edit_genre').value
+            .split(',').map(g=>g.trim()).filter(Boolean),
+          rating:      parseFloat(document.getElementById('edit_rating').value)||0,
+          year:        parseInt(document.getElementById('edit_year').value)||new Date().getFullYear(),
+          status:      document.getElementById('edit_status').value,
+          studio:      document.getElementById('edit_studio').value.trim(),
+          thumbnail:   thumb,
+          banner:      document.getElementById('edit_banner').value.trim()||thumb,
+          description: document.getElementById('edit_desc').value.trim(),
+          trending:    document.getElementById('edit_trending').checked,
+          latest:      document.getElementById('edit_latest').checked,
+          top10:       nowTop10,
+          published:   document.getElementById('edit_published').checked,
+        };
+        // Newly added to Top 10 → stamp current time so it sorts first (newest = first)
+        if (nowTop10 && !wasTop10) {
+          update.top10AddedAt = Date.now();
+        }
+        await db.collection('anime').doc(id).update(update);
+        // Update cache
+        const idx = allAnimeCache.findIndex(a=>a.firestoreId===id);
+        if (idx!==-1) allAnimeCache[idx] = {...allAnimeCache[idx],...update};
+        document.getElementById('editAnimeSuccess').style.display = 'block';
+        setTimeout(()=>{
+          document.getElementById('editAnimeSuccess').style.display='none';
+          closeEditAnime();
+          renderManageList();
+        }, 1500);
+      } catch(e) {
+        document.getElementById('editAnimeError').textContent='Error: '+e.message;
+        document.getElementById('editAnimeError').style.display='block';
+      } finally {
+        btn.innerHTML='<i class="fas fa-floppy-disk"></i> Save Changes';
+        btn.disabled=false;
+      }
+    }
+
+    // ===== SEASON EDIT =====
+    async function loadSeasonEditData(seasonIdStr) {
+      const animeId = document.getElementById('ep_anime').value;
+      if (!animeId) return;
+      editingAnimeId  = animeId;
+      editingSeasonId = parseInt(seasonIdStr);
+      const doc = await db.collection('anime').doc(animeId).get();
+      if (!doc.exists) return;
+      const season = (doc.data().seasons||[])
+        .find(s=>s.id===editingSeasonId);
+      if (!season) return;
+
+      // Pre-fill rename field with current season title
+      const renameInput = document.getElementById('rename_season_input');
+      if (renameInput) renameInput.value = season.title || '';
+
+      // Render season reorder list with ALL seasons from this anime
+      renderSeasonReorderList(doc.data().seasons || []);
+
+      // Show season poster if exists
+      const posterWrap = document.getElementById('editSeasonPosterWrap');
+      const posterImg  = document.getElementById('editSeasonPosterImg');
+      const posterUrl  = document.getElementById('editSeasonPosterUrl');
+      if (season.poster) {
+        posterImg.src = season.poster;
+        posterWrap.style.display = 'block';
+        if (posterUrl) posterUrl.value = season.poster;
+      } else {
+        posterWrap.style.display = 'none';
+        if (posterUrl) posterUrl.value = '';
+      }
+      editingSeasonPacks=[];
+      if (season.telegramPacks&&season.telegramPacks.length>0) {
+        editingSeasonPacks = JSON.parse(JSON.stringify(season.telegramPacks));
+      } else if (season.telegramLinks&&
+        Object.values(season.telegramLinks).some(v=>v)) {
+        editingSeasonPacks.push({
+          range:season.episodeRange||'',links:season.telegramLinks
+        });
+      } else if (season.telegramUrl) {
+        editingSeasonPacks.push({
+          range:season.episodeRange||'',single:season.telegramUrl
+        });
+      }
+      renderExistingPacks();
+      renderSeasonEpisodesList(season);
+    }
+
+    function renderExistingPacks() {
+      const c = document.getElementById('existingPacksList');
+      if (!editingSeasonPacks.length) {
+        c.innerHTML='<p style="font-size:12px;color:var(--text2);padding:4px 0">No packs yet.</p>';return;
+      }
+      c.innerHTML = editingSeasonPacks.map((pack,idx)=>{
+        const rt = pack.range||'No range';
+        const ql = pack.single?'Single link':(pack.links?Object.entries(pack.links).filter(([,v])=>v).map(([q])=>q).join(', '):'');
+        const pkQs = pack.links?Object.keys(pack.links):[];
+        const pkTagsHtml = pkQs.map(k=>{
+          const{bg,sh}=qClr(k);
+          return `<div style="display:inline-flex;align-items:stretch;border-radius:7px;overflow:hidden;box-shadow:0 3px 0 ${sh}"><span style="background:${bg};color:#fff;font-size:11px;font-weight:800;padding:6px 9px;font-family:'Poppins',sans-serif">${k}</span><button onclick="removePackQ(${idx},'${k}')" style="background:${bg};filter:brightness(0.7);border:none;color:#fff;padding:6px 8px;cursor:pointer;font-size:13px;line-height:1;font-weight:700">×</button></div>`;
+        }).join(' ')||'<span style="font-size:11px;color:var(--text2);font-style:italic">No quality links</span>';
+        return `
+          <div style="background:var(--bg3);border-radius:10px;padding:12px;margin-bottom:10px;border:1px solid var(--border)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+              <div>
+                <div style="font-weight:700;font-size:13px;color:var(--text)">Pack ${idx+1}: ${rt}</div>
+                <div style="font-size:11px;color:var(--text2)">${ql}</div>
+              </div>
+              <button onclick="removePack(${idx})" style="background:rgba(229,9,20,0.1);border:1px solid #e50914;color:#e50914;border-radius:6px;padding:4px 10px;font-size:12px;cursor:pointer"><i class="fas fa-trash"></i></button>
+            </div>
+            <div class="form-group" style="margin-bottom:8px">
+              <label>RANGE</label>
+              <input type="text" value="${pack.range||''}" placeholder="e.g. 1-25" onchange="editingSeasonPacks[${idx}].range=this.value"/>
+            </div>
+            ${pack.single!==undefined?`
+            <div class="form-group" style="margin-bottom:0">
+              <label>SINGLE LINK</label>
+              <input type="url" value="${pack.single||''}" onchange="editingSeasonPacks[${idx}].single=this.value"/>
+            </div>`:`
+            <div style="margin-bottom:8px">
+              <label style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:8px">Quality Links</label>
+              <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">${pkTagsHtml}</div>
+              <div style="display:flex;flex-direction:column;gap:6px">
+                <div style="display:flex;gap:8px">
+                  <input type="text" id="pk_${idx}_ql" placeholder="e.g. 720p" maxlength="12" style="width:80px;flex-shrink:0;padding:8px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;font-weight:700;outline:none;box-sizing:border-box"/>
+                  <input type="url" id="pk_${idx}_qu" placeholder="Telegram link" style="flex:1;padding:8px 10px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-family:'Poppins',sans-serif;font-size:12px;outline:none;box-sizing:border-box"/>
+                </div>
+                <button onclick="addPackQ(${idx})" style="width:100%;box-sizing:border-box;background:var(--accent);border:none;border-radius:8px;padding:10px;color:#fff;cursor:pointer;box-shadow:0 3px 0 var(--btn-3d);font-size:13px;font-weight:700;font-family:'Poppins',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px"><i class="fas fa-plus"></i> Add Quality</button>
+              </div>
+            </div>`}
+          </div>`;
+      }).join('');
+    }
+
+    // ===== SEASON EPISODE LIST (admin) =====
+    function renderSeasonEpisodesList(season) {
+      seasonEpsRef = season.episodes || []; // store for index-based delete
+      const countEl = document.getElementById('seasonEpCount');
+      const listEl  = document.getElementById('seasonEpisodesList');
+      countEl.textContent =
+        `${seasonEpsRef.length} episode${seasonEpsRef.length!==1?'s':''}`;
+      if (!seasonEpsRef.length) {
+        listEl.innerHTML=`<div style="text-align:center;color:var(--text2);
+          font-size:13px;padding:16px">No episodes yet.</div>`;
+        return;
+      }
+      listEl.innerHTML = seasonEpsRef.map((ep, idx) => {
+        const hasVid = !!(ep.languages &&
+          Object.values(ep.languages).some(qm=>
+            qm&&Object.values(qm).some(u=>u&&u.trim())));
+        const hasTg = !!(ep.telegramLinks||ep.telegramUrl);
+        return `
+          <div style="display:flex;align-items:center;gap:10px;
+            padding:10px;background:var(--bg2);border-radius:8px;
+            margin-bottom:8px;border:1px solid var(--border)">
+            <div style="width:60px;height:34px;border-radius:6px;
+              background:var(--bg3);flex-shrink:0;overflow:hidden">
+              ${ep.thumbnail
+                ? `<img src="${ep.thumbnail}"
+                    style="width:100%;height:100%;object-fit:cover"/>`
+                : `<div style="width:100%;height:100%;display:flex;
+                    align-items:center;justify-content:center">
+                    <i class="fas fa-film"
+                      style="color:var(--text2);font-size:12px"></i>
+                  </div>`}
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="font-size:13px;font-weight:600;color:var(--text);
+                white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                Ep ${ep.id}: ${ep.title||'Episode '+ep.id}
+              </div>
+              <div style="font-size:11px;color:var(--text2);
+                display:flex;gap:8px;flex-wrap:wrap;margin-top:2px">
+                ${ep.duration?`<span>${ep.duration}</span>`:''}
+                ${hasVid?`<span style="color:var(--accent)">
+                  <i class="fas fa-play-circle"></i></span>`:''}
+                ${hasTg?`<span style="color:#2ca5e0">
+                  <i class="fab fa-telegram"></i></span>`:''}
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0">
+              <button
+                style="background:var(--bg3);border:1px solid var(--border);
+                  color:var(--text2);border-radius:6px;width:30px;height:30px;
+                  display:flex;align-items:center;justify-content:center;
+                  cursor:pointer;font-size:13px"
+                onclick="editEpisodeByIdx(${idx})"
+                title="Edit">
+                <i class="fas fa-pen"></i>
+              </button>
+              <button
+                style="background:rgba(229,9,20,0.1);
+                  border:1px solid rgba(229,9,20,0.4);color:#e50914;
+                  border-radius:6px;width:30px;height:30px;
+                  display:flex;align-items:center;justify-content:center;
+                  cursor:pointer;font-size:13px"
+                onclick="deleteEpisodeByIdx(${idx})"
+                title="Delete">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // Delete by index — no string escaping issues
+    async function deleteEpisodeByIdx(idx) {
+      const ep = seasonEpsRef[idx];
+      if (!ep) return;
+      const title = ep.title||`Ep ${ep.id}`;
+      if (!confirm(`Delete "${title}"?`)) return;
+      const ref  = db.collection('anime').doc(editingAnimeId);
+      const doc  = await ref.get();
+      if (!doc.exists) return;
+      let seasons = doc.data().seasons||[];
+      const sIdx  = seasons.findIndex(s=>s.id===editingSeasonId);
+      if (sIdx===-1) return;
+      seasons[sIdx].episodes =
+        (seasons[sIdx].episodes||[]).filter(e=>e.id!==ep.id);
+      await ref.update({seasons});
+      showEpSuccess(`Ep ${ep.id} deleted!`);
+      loadSeasonEditData(String(editingSeasonId));
+    }
+
+    // Edit by index — pre-fill form
+    function editEpisodeByIdx(idx) {
+      const ep = seasonEpsRef[idx];
+      if (!ep) return;
+
+      document.getElementById('ep_num').value      = ep.id;
+      document.getElementById('ep_title').value    = ep.title||'';
+      document.getElementById('ep_desc').value     = ep.description||'';
+      document.getElementById('ep_duration').value = ep.duration||'';
+
+      if (ep.thumbnail) {
+        document.getElementById('ep_thumb').value = ep.thumbnail;
+        setPreview(ep.thumbnail, 'epThumbPreview');
+      }
+
+      episodeLangData = ep.languages ? JSON.parse(JSON.stringify(ep.languages)) : {};
+      updateSavedLangsPreview();
+
+      // Load current lang tab qualities into dynamic UI
+      lqQualities = {...(episodeLangData[currentLangTab]||{})};
+      renderQTags(lqQualities,'lq_qd','removeLqQ');
+      document.getElementById('lq_ql').value='';
+      document.getElementById('lq_qu').value='';
+
+      // Episode TG
+      etgQualities = ep.telegramLinks ? {...ep.telegramLinks} : {};
+      renderQTags(etgQualities,'etg_qd','removeEtgQ');
+      document.getElementById('etg_ql').value='';
+      document.getElementById('etg_qu').value='';
+      document.getElementById('etg_single').value = ep.telegramUrl||'';
+
+      document.getElementById('ep_num').scrollIntoView({behavior:'smooth',block:'center'});
+      showEpSuccess(`Editing Ep ${ep.id} — make changes then click Add Episode`);
+    }
+
+    // ===== ADD NEW PACK =====
+    function addNewPack() {
+      const range  = document.getElementById('new_pack_range').value.trim();
+      const single = document.getElementById('new_pack_single').value.trim();
+      if (!range) { alert('Episode range required!'); return; }
+      if (!Object.keys(newPackQs).length && !single) { alert('Add at least one link!'); return; }
+      const pack = { range };
+      if (single) pack.single = single;
+      else pack.links = {...newPackQs};
+      editingSeasonPacks.push(pack);
+      renderExistingPacks();
+      ['new_pack_range','new_pack_single','npk_ql','npk_qu']
+        .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+      newPackQs={};renderQTags(newPackQs,'npk_qd','removeNpkQ');
+      alert('Pack added! Click "Save Season Changes".');
+    }
+
+    function removePack(idx) {
+      if (!confirm('Remove this pack?')) return;
+      editingSeasonPacks.splice(idx,1);
+      renderExistingPacks();
+    }
+
+    async function saveSeasonEdit() {
+      if (!editingAnimeId||editingSeasonId===null) return;
+      const btn = document.getElementById('saveSeasonEditBtn');
+      btn.innerHTML='<i class="fas fa-circle-notch fa-spin"></i> Saving...';
+      btn.disabled=true;
+      try {
+        const ref = db.collection('anime').doc(editingAnimeId);
+        const doc = await ref.get();
+        let seasons = doc.data().seasons||[];
+        const sIdx  = seasons.findIndex(s=>s.id===editingSeasonId);
+        if (sIdx===-1) throw new Error('Season not found!');
+        seasons[sIdx].telegramPacks =
+          editingSeasonPacks.filter(p=>p.range);
+        delete seasons[sIdx].telegramLinks;
+        delete seasons[sIdx].telegramUrl;
+        delete seasons[sIdx].episodeRange;
+        await ref.update({seasons});
+        showEpSuccess('Season packs saved!');
+      } catch(e) {
+        document.getElementById('epError').textContent='Error: '+e.message;
+        document.getElementById('epError').style.display='block';
+      } finally {
+        btn.innerHTML='<i class="fas fa-floppy-disk"></i> Save Season Changes';
+        btn.disabled=false;
+      }
+    }
+
+    // ===== SEASON POSTER GALLERY =====
+    async function handleSeasonPosterPick(input) {
+      const file = input.files && input.files[0];
+      if (!file) return; input.value = '';
+      try {
+        const b64 = await compressImg(file, 900, 0.85);
+        document.getElementById('new_season_poster').value = b64;
+        document.getElementById('new_season_poster_url').value = '';
+        const prev = document.getElementById('seasonPosterPreview');
+        prev.innerHTML = `<img src="${b64}"
+          style="width:100%;height:100%;object-fit:cover;border-radius:6px"/>`;
+      } catch(e) { alert('Could not load image.'); }
+    }
+    function onSeasonPosterUrl(url) {
+      document.getElementById('new_season_poster').value = url;
+      if (url && url.startsWith('http')) {
+        const prev = document.getElementById('seasonPosterPreview');
+        prev.innerHTML = `<img src="${url}"
+          style="width:100%;height:100%;object-fit:cover;border-radius:6px"
+          onerror="this.parentElement.innerHTML='<i class=\\"fas fa-image\\" style=\\"color:var(--text2);font-size:16px\\"></i>'"/>`;
+      }
+    }
+
+    // ===== EDIT MODAL GALLERY HELPERS =====
+    function previewEditImg(inputId, imgId) {
+      const url = document.getElementById(inputId).value.trim();
+      const img = document.getElementById(imgId);
+      if (url) { img.src = url; img.style.display = 'block'; }
+      else img.style.display = 'none';
+    }
+    function handleEditFile(input, urlInputId, imgId) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        document.getElementById(urlInputId).value = e.target.result;
+        const img = document.getElementById(imgId);
+        img.src = e.target.result; img.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+    // Pre-fill edit thumb/banner previews when modal opens
+    function prefillEditPreviews(thumbnail, banner) {
+      const ti = document.getElementById('edit_thumb_img');
+      const bi = document.getElementById('edit_banner_img');
+      if (thumbnail) { ti.src = thumbnail; ti.style.display = 'block'; }
+      else ti.style.display = 'none';
+      if (banner) { bi.src = banner; bi.style.display = 'block'; }
+      else bi.style.display = 'none';
+    }
+
+    // ===== SEASON REORDER — DRAG & TOUCH =====
+    // ===================================================================
+    // ===== SEASON REORDER — TOP LEVEL + SUB SEASONS ===================
+    // ===================================================================
+    let _reorderSeasons = [];   // top-level order
+    let _reorderSubs    = {};   // { parentId: [sub, sub, ...] }
+    let _allRawSeasons  = [];   // original full list from Firestore
+    let _dragSrcIdx = null;
+    let _dragGroup  = null;     // 'top' or parentId string for sub-drag
+
+    /* ── Build a single draggable row ── */
+    function makeRow(title, idx, group, isSub) {
+      const row = document.createElement('div');
+      row.dataset.idx   = idx;
+      row.dataset.group = group;
+      row.draggable     = true;
+      row.style.cssText = `
+        display:flex;align-items:center;gap:10px;
+        background:${isSub ? 'var(--bg3)' : 'var(--bg2)'};
+        border:1.5px solid var(--border);
+        border-radius:8px;padding:${isSub ? '8px 10px 8px 22px' : '10px 12px'};
+        cursor:grab;box-shadow:0 2px 0 var(--btn-3d);
+        user-select:none;-webkit-user-select:none;transition:background 0.15s;`;
+      row.innerHTML = `
+        <i class="fas fa-${isSub ? 'grip-dots-vertical' : 'grip-vertical'}"
+           style="color:var(--text2);font-size:13px;flex-shrink:0"></i>
+        ${isSub ? '<i class="fas fa-arrow-turn-down-right" style="color:var(--accent);font-size:10px;flex-shrink:0"></i>' : ''}
+        <span style="font-size:${isSub?'12':'13'}px;font-weight:700;color:var(--text);flex:1">${title}</span>
+        <div style="display:flex;gap:4px">
+          <button onclick="moveRow(${idx},'${group}',-1)"
+            style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;
+                   padding:4px 9px;color:var(--text2);cursor:pointer;font-size:13px;
+                   box-shadow:0 2px 0 var(--btn-3d)">↑</button>
+          <button onclick="moveRow(${idx},'${group}',1)"
+            style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;
+                   padding:4px 9px;color:var(--text2);cursor:pointer;font-size:13px;
+                   box-shadow:0 2px 0 var(--btn-3d)">↓</button>
+        </div>`;
+
+      // Drag events (desktop)
+      row.addEventListener('dragstart', e => {
+        _dragSrcIdx = idx; _dragGroup = group;
+        e.dataTransfer.effectAllowed = 'move';
+        setTimeout(() => row.style.opacity = '0.4', 0);
+      });
+      row.addEventListener('dragend',   () => { row.style.opacity = '1'; });
+      row.addEventListener('dragover',  e => {
+        e.preventDefault();
+        if (e.currentTarget.dataset.group === group)
+          row.style.background = 'rgba(251,54,64,0.15)';
+      });
+      row.addEventListener('dragleave', () => {
+        row.style.background = isSub ? 'var(--bg3)' : 'var(--bg2)';
+      });
+      row.addEventListener('drop', e => {
+        e.preventDefault();
+        row.style.background = isSub ? 'var(--bg3)' : 'var(--bg2)';
+        const toGroup = e.currentTarget.dataset.group;
+        const toIdx   = parseInt(e.currentTarget.dataset.idx);
+        if (_dragSrcIdx === null || _dragGroup !== toGroup || _dragSrcIdx === toIdx) return;
+        swapInGroup(toGroup, _dragSrcIdx, toIdx);
+      });
+
+      // Touch events (mobile long-press drag)
+      let _tt, _tDragging = false;
+      row.addEventListener('touchstart', e => {
+        _tt = setTimeout(() => {
+          _tDragging = true; _dragSrcIdx = idx; _dragGroup = group;
+          row.style.opacity = '0.5'; row.style.transform = 'scale(1.02)';
+        }, 350);
+      }, { passive: true });
+      row.addEventListener('touchmove', e => {
+        if (!_tDragging) { clearTimeout(_tt); return; }
+        e.preventDefault();
+        const t = e.touches[0];
+        document.querySelectorAll('#seasonReorderList [data-group]').forEach(r => {
+          r.style.background = r.dataset.group !== 'top'
+            ? 'var(--bg3)' : 'var(--bg2)';
+        });
+        const el = document.elementFromPoint(t.clientX, t.clientY);
+        const target = el?.closest('[data-group]');
+        if (target && target !== row && target.dataset.group === group)
+          target.style.background = 'rgba(251,54,64,0.15)';
+      }, { passive: false });
+      row.addEventListener('touchend', e => {
+        clearTimeout(_tt);
+        if (!_tDragging) return;
+        _tDragging = false;
+        row.style.opacity = '1'; row.style.transform = '';
+        const t = e.changedTouches[0];
+        const el = document.elementFromPoint(t.clientX, t.clientY);
+        const target = el?.closest('[data-group]');
+        if (target && target !== row && target.dataset.group === group) {
+          swapInGroup(group, idx, parseInt(target.dataset.idx));
+        }
+      });
+
+      return row;
+    }
+
+    function swapInGroup(group, fromIdx, toIdx) {
+      if (group === 'top') {
+        const m = _reorderSeasons.splice(fromIdx, 1)[0];
+        _reorderSeasons.splice(toIdx, 0, m);
+      } else {
+        const arr = _reorderSubs[group];
+        if (!arr) return;
+        const m = arr.splice(fromIdx, 1)[0];
+        arr.splice(toIdx, 0, m);
+      }
+      renderReorderUI();
+    }
+
+    function moveRow(idx, group, dir) {
+      const newIdx = idx + dir;
+      if (group === 'top') {
+        if (newIdx < 0 || newIdx >= _reorderSeasons.length) return;
+        [_reorderSeasons[idx], _reorderSeasons[newIdx]] =
+          [_reorderSeasons[newIdx], _reorderSeasons[idx]];
+      } else {
+        const arr = _reorderSubs[group];
+        if (!arr || newIdx < 0 || newIdx >= arr.length) return;
+        [arr[idx], arr[newIdx]] = [arr[newIdx], arr[idx]];
+      }
+      renderReorderUI();
+    }
+
+    function renderReorderUI() {
+      const list = document.getElementById('seasonReorderList');
+      const btn  = document.getElementById('saveOrderBtn');
+      if (!list) return;
+      list.innerHTML = '';
+
+      _reorderSeasons.forEach((s, idx) => {
+        list.appendChild(makeRow(s.title, idx, 'top', false));
+        // Show sub-seasons indented below this parent
+        const subs = _reorderSubs[String(s.id)] || [];
+        subs.forEach((sub, subIdx) => {
+          list.appendChild(makeRow(sub.title, subIdx, String(s.id), true));
+        });
+      });
+
+      if (btn) { btn.style.display = 'flex'; }
+    }
+
+    function renderSeasonReorderList(seasons) {
+      _allRawSeasons = JSON.parse(JSON.stringify(seasons));
+      _reorderSeasons = seasons.filter(s => !s.parentId).map(s => ({...s}));
+      _reorderSubs = {};
+      seasons.filter(s => s.parentId).forEach(sub => {
+        const key = String(sub.parentId);
+        if (!_reorderSubs[key]) _reorderSubs[key] = [];
+        _reorderSubs[key].push({...sub});
+      });
+      const btn = document.getElementById('saveOrderBtn');
+      if (btn) btn.style.display = 'none';
+      renderReorderUI();
+    }
+
+    async function saveSeasonOrder() {
+      if (!editingAnimeId) return;
+      const btn = document.getElementById('saveOrderBtn');
+      if (btn) { btn.innerHTML='<i class="fas fa-circle-notch fa-spin"></i> Saving...'; btn.disabled=true; }
+      try {
+        const ref = db.collection('anime').doc(editingAnimeId);
+        const doc = await ref.get();
+        const allSeasons = doc.data().seasons || [];
+        // Rebuild in new order: each top-level followed by its reordered subs
+        const reordered = [];
+        _reorderSeasons.forEach(top => {
+          const full = allSeasons.find(s => s.id === top.id);
+          if (full) reordered.push(full);
+          const subs = _reorderSubs[String(top.id)] || [];
+          subs.forEach(sub => {
+            const fullSub = allSeasons.find(s => s.id === sub.id);
+            if (fullSub) reordered.push(fullSub);
+          });
+        });
+        await ref.update({ seasons: reordered });
+        showEpSuccess('Season order saved!');
+        if (btn) { btn.innerHTML='<i class="fas fa-floppy-disk"></i> Save Order'; btn.disabled=false; btn.style.display='none'; }
+        const animeId = document.getElementById('ep_anime').value;
+        if (animeId) await loadAnimeSeasons(animeId);
+      } catch(e) {
+        alert('Error: ' + e.message);
+        if (btn) { btn.innerHTML='<i class="fas fa-floppy-disk"></i> Save Order'; btn.disabled=false; }
+      }
+    }
+
+        // ===== SEASON POSTER EDIT =====
+    let _editSeasonPosterBase64 = '';
+    function previewEditSeasonPoster(url) {
+      const wrap = document.getElementById('editSeasonPosterWrap');
+      const img  = document.getElementById('editSeasonPosterImg');
+      _editSeasonPosterBase64 = '';
+      if (url) { img.src = url; wrap.style.display = 'block'; }
+      else wrap.style.display = 'none';
+    }
+    function handleEditSeasonPosterFile(input) {
+      const file = input.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        _editSeasonPosterBase64 = e.target.result;
+        document.getElementById('editSeasonPosterUrl').value = '';
+        const img  = document.getElementById('editSeasonPosterImg');
+        const wrap = document.getElementById('editSeasonPosterWrap');
+        img.src = e.target.result; wrap.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+    async function saveSeasonPoster() {
+      if (editingSeasonId === null || !editingAnimeId) { alert('No season selected.'); return; }
+      const urlInput  = document.getElementById('editSeasonPosterUrl').value.trim();
+      const poster    = _editSeasonPosterBase64 || urlInput;
+      if (!poster) { alert('Please pick an image or paste a URL.'); return; }
+      const ref = db.collection('anime').doc(editingAnimeId);
+      try {
+        const doc = await ref.get();
+        if (!doc.exists) return;
+        const seasons = doc.data().seasons || [];
+        const idx = seasons.findIndex(s => s.id === editingSeasonId);
+        if (idx === -1) return;
+        seasons[idx].poster = poster;
+        await ref.update({ seasons });
+        // Update preview
+        document.getElementById('editSeasonPosterImg').src = poster;
+        document.getElementById('editSeasonPosterWrap').style.display = 'block';
+        _editSeasonPosterBase64 = '';
+        showEpSuccess('Season poster saved!');
+      } catch(e) {
+        console.error('Post news error:', e);
+        const errEl = document.getElementById('newsSuccess');
+        errEl.style.display = 'block';
+        errEl.style.borderColor = '#e74c3c';
+        errEl.style.color = '#e74c3c';
+        errEl.style.background = 'rgba(231,76,60,0.1)';
+        errEl.innerHTML = '<i class="fas fa-triangle-exclamation"></i> Error: ' + e.message;
+        setTimeout(() => { errEl.style.display='none'; errEl.style.borderColor='#27ae60'; errEl.style.color='#27ae60'; errEl.style.background='rgba(39,174,96,0.15)'; }, 4000);
+      }
+    }
+
+    // ===== RENAME SEASON =====
+    async function renameSeason() {
+      if (editingSeasonId === null || !editingAnimeId) {
+        alert('No season selected.'); return;
+      }
+      const newName = document.getElementById('rename_season_input').value.trim();
+      if (!newName) { alert('Please enter a new name.'); return; }
+      const ref = db.collection('anime').doc(editingAnimeId);
+      try {
+        const doc = await ref.get();
+        if (!doc.exists) { alert('Anime not found!'); return; }
+        let seasons = doc.data().seasons || [];
+        const idx = seasons.findIndex(s => s.id === editingSeasonId);
+        if (idx === -1) { alert('Season not found!'); return; }
+        const oldName = seasons[idx].title;
+        seasons[idx].title = newName;
+        await ref.update({ seasons });
+        showEpSuccess(`Renamed "${oldName}" → "${newName}"`);
+        // Update the dropdown option text
+        const opt = ssData.season.options.find(o => o.value === String(editingSeasonId));
+        if (opt) opt.text = newName;
+        document.getElementById('ssSeasonText').textContent = newName;
+      } catch(e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    // ===== DELETE CURRENT SEASON =====
+    async function deleteCurrentSeason() {
+      if (editingSeasonId === null || !editingAnimeId) {
+        alert('No season selected to delete.'); return;
+      }
+      const seasonName = ssData.season?.options?.find(o=>o.value===String(editingSeasonId))?.text || `Season ${editingSeasonId}`;
+      if (!confirm(`Delete "${seasonName}"?\n\nThis will permanently delete the season AND all its episodes.\nThis cannot be undone!`)) return;
+      const ref = db.collection('anime').doc(editingAnimeId);
+      try {
+        const doc = await ref.get();
+        if (!doc.exists) { alert('Anime not found!'); return; }
+        let seasons = doc.data().seasons || [];
+        // Remove this season and any sub-seasons that have this as parent
+        seasons = seasons.filter(s => s.id !== editingSeasonId && s.parentId !== editingSeasonId);
+        await ref.update({ seasons });
+        showEpSuccess(`"${seasonName}" deleted!`);
+        // Reset UI
+        editingSeasonId = null; editingAnimeId = null; editingSeasonPacks = [];
+        document.getElementById('editSeasonSection').style.display = 'none';
+        ssData.season.selected = null;
+        document.getElementById('ssSeasonText').textContent = '-- Select Season --';
+        document.getElementById('ssSeasonDisplay').style.borderColor = '';
+        document.getElementById('ep_season').value = '';
+        await loadAnimeSeasons();
+        await updateStats();
+      } catch(e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    async function saveSeasonOnly() {
+      const animeId  = document.getElementById('ep_anime').value;
+      const seasonVal= document.getElementById('ep_season').value;
+      if (!animeId || seasonVal !== 'new') { alert('Select "New Season" first!'); return; }
+      const single  = document.getElementById('stg_single').value.trim();
+      const range   = document.getElementById('stg_range').value.trim();
+      const hasStg  = Object.keys(stgQualities).length > 0 || single;
+      if (!hasStg) { alert('Add at least one TG link!'); return; }
+
+      const btn = document.getElementById('saveSeasonOnlyBtn');
+      btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Saving...';
+      btn.disabled = true;
+      try {
+        const ref    = db.collection('anime').doc(animeId);
+        const doc    = await ref.get();
+        let seasons  = doc.data().seasons || [];
+        const nextId = seasons.length > 0 ? Math.max(...seasons.map(s=>s.id)) + 1 : 1;
+
+        const poster       = document.getElementById('new_season_poster')?.value.trim() || '';
+        const seasonTitle  = document.getElementById('new_season_title').value.trim() || `Season ${nextId}`;
+        const subTitle     = document.getElementById('new_subseason_title')?.value.trim() || '';
+        const yearVal      = parseInt(document.getElementById('new_season_year').value) || new Date().getFullYear();
+        const parentRaw    = document.getElementById('new_season_parent')?.value || '';
+        const legacyParent = parentRaw ? parseInt(parentRaw) : null;
+
+        const pack = { range: range || '' };
+        if (single) pack.single = single;
+        else pack.links = {...stgQualities};
+
+        if (subTitle) {
+          let parent = seasons.find(s => s.title === seasonTitle && !s.parentId);
+          if (!parent) {
+            const parentId = nextId;
+            parent = { id:parentId, title:seasonTitle, year:yearVal, ...(poster?{poster}:{}), episodes:[], telegramPacks:[] };
+            seasons.push(parent);
+          }
+          const subId = Math.max(...seasons.map(s=>s.id)) + 1;
+          seasons.push({ id:subId, title:subTitle, year:yearVal, ...(poster?{poster}:{}), parentId:parent.id, episodes:[], telegramPacks:[pack] });
+          await ref.update({ seasons });
+          showEpSuccess(`"${seasonTitle}" → "${subTitle}" saved!`);
+        } else {
+          const newSeason = { id:nextId, title:seasonTitle, year:yearVal, ...(poster?{poster}:{}), ...(legacyParent!==null?{parentId:legacyParent}:{}), episodes:[], telegramPacks:[pack] };
+          seasons.push(newSeason);
+          await ref.update({ seasons });
+          showEpSuccess(`"${seasonTitle}" saved!`);
+        }
+
+        ['new_season_title','new_season_year','new_season_poster','new_season_poster_url','new_subseason_title','stg_single','stg_range','stg_ql','stg_qu']
+          .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        stgQualities={};renderQTags(stgQualities,'stg_qd','removeStgQ');
+        const pp = document.getElementById('new_season_parent'); if (pp) pp.value = '';
+        const prev = document.getElementById('seasonPosterPreview');
+        if (prev) prev.innerHTML = '<i class="fas fa-image" style="color:var(--text2);font-size:16px"></i>';
+        document.getElementById('newSeasonFields').style.display = 'none';
+        await loadAnimeSeasons();
+        await updateStats();
+      } catch(e) {
+        document.getElementById('epError').textContent = 'Error: ' + e.message;
+        document.getElementById('epError').style.display = 'block';
+      } finally {
+        btn.innerHTML = '<i class="fab fa-telegram"></i> Save Season + TG Pack Only';
+        btn.disabled = false;
+      }
+    }
+
+    function showEpSuccess(msg) {
+      const el=document.getElementById('epSuccess');
+      el.textContent=msg; el.style.display='block';
+      setTimeout(()=>{el.style.display='none';el.textContent='Saved!';},3000);
+    }
+
+    // ===== LANG TABS =====
+    function switchLangTab(lang, btn) {
+      currentLangTab = lang;
+      document.querySelectorAll('#langTabsBar .season-tab').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('customLangField').style.display = lang==='Custom'?'block':'none';
+      lqQualities = {...(episodeLangData[lang]||{})};
+      renderQTags(lqQualities,'lq_qd','removeLqQ');
+      document.getElementById('lq_ql').value='';
+      document.getElementById('lq_qu').value='';
+    }
+    function saveLangUrls() {
+      let lang=currentLangTab;
+      if (lang==='Custom') {
+        const c=document.getElementById('customLangName').value.trim();
+        if(!c){alert('Enter language name!');return;}
+        lang=c;
+      }
+      // Also add current input row if filled
+      const l=document.getElementById('lq_ql').value.trim();
+      const u=document.getElementById('lq_qu').value.trim();
+      if(l&&u){lqQualities[l]=u;renderQTags(lqQualities,'lq_qd','removeLqQ');document.getElementById('lq_ql').value='';document.getElementById('lq_qu').value='';}
+      if(!Object.keys(lqQualities).length){alert('Add at least one quality!');return;}
+      episodeLangData[lang]={...lqQualities};
+      updateSavedLangsPreview();
+      alert(`✓ ${lang} saved!`);
+    }
+    function updateSavedLangsPreview() {
+      const c=document.getElementById('savedLangsPreview');
+      const langs=Object.keys(episodeLangData);
+      if(!langs.length){c.innerHTML='';return;}
+      c.innerHTML=`
+        <div style="font-size:12px;color:var(--text2);
+          margin-bottom:8px;font-weight:600">Saved:</div>
+        ${langs.map(lang=>{
+          const q=Object.entries(episodeLangData[lang])
+            .filter(([,v])=>v).map(([q])=>q).join(', ');
+          return `
+            <div style="display:flex;justify-content:space-between;
+              align-items:center;background:var(--bg3);border-radius:6px;
+              padding:8px 10px;margin-bottom:6px;
+              border:1px solid var(--border)">
+              <div>
+                <span style="font-size:13px;font-weight:600;
+                  color:var(--text)">${lang}</span>
+                <span style="font-size:11px;color:var(--text2);
+                  margin-left:8px">${q}</span>
+              </div>
+              <button onclick="removeSavedLang('${lang}')"
+                style="background:none;border:none;color:#e50914;
+                  cursor:pointer;font-size:14px">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>`;
+        }).join('')}`;
+    }
+    function removeSavedLang(lang) {
+      delete episodeLangData[lang]; updateSavedLangsPreview();
+    }
+
+    // ===== ADD EPISODE =====
+    async function addEpisode() {
+      const animeId   = document.getElementById('ep_anime').value;
+      const seasonVal = document.getElementById('ep_season').value;
+      if (!animeId)   { alert('Select anime!');  return; }
+      if (!seasonVal) { alert('Select season!'); return; }
+      const epNumRaw  = document.getElementById('ep_num').value;
+      const epNum     = epNumRaw ? parseInt(epNumRaw) : null;
+      const etgSingle = document.getElementById('etg_single').value.trim();
+      const hasEtg    = Object.keys(etgQualities).length>0 || etgSingle;
+      const hasVideo  = Object.keys(episodeLangData).length>0;
+      if (!epNum&&!hasVideo&&!hasEtg) {
+        alert('Add episode number, video URL, or TG link!'); return;
+      }
+      const btn=document.getElementById('addEpBtn');
+      btn.innerHTML='<i class="fas fa-circle-notch fa-spin"></i> Saving...';
+      btn.disabled=true;
+      try {
+        const ref=db.collection('anime').doc(animeId);
+        const doc=await ref.get();
+        if(!doc.exists) throw new Error('Anime not found!');
+        let seasons=doc.data().seasons||[];
+        let finalNum=epNum;
+        if(!finalNum&&seasonVal!=='new'){
+          const sIdx=seasons.findIndex(s=>s.id===parseInt(seasonVal));
+          if(sIdx!==-1){
+            const eps=seasons[sIdx].episodes||[];
+            finalNum=eps.length>0?Math.max(...eps.map(e=>e.id))+1:1;
+          } else finalNum=1;
+        } else if(!finalNum) finalNum=1;
+
+        const thumb=document.getElementById('ep_thumb').value||
+          document.getElementById('ep_thumb_url').value.trim();
+
+        const episode={
+          id:finalNum,
+          title:document.getElementById('ep_title').value.trim()||`Episode ${finalNum}`,
+          description:document.getElementById('ep_desc').value.trim(),
+          duration:document.getElementById('ep_duration').value.trim(),
+          thumbnail:thumb,
+          languages:{...episodeLangData}
+        };
+        if(hasEtg){
+          if(etgSingle) episode.telegramUrl=etgSingle;
+          else episode.telegramLinks={...etgQualities};
+        }
+        if(seasonVal==='new'){
+          const newId=seasons.length>0?Math.max(...seasons.map(s=>s.id))+1:1;
+          const single  =document.getElementById('stg_single').value.trim();
+          const range   =document.getElementById('stg_range').value.trim();
+          const hasStg  =Object.keys(stgQualities).length>0||single;
+          const newSeason={
+            id:newId,
+            title:document.getElementById('new_season_title')
+              .value.trim()||`Season ${newId}`,
+            year:parseInt(document.getElementById('new_season_year').value)||
+              new Date().getFullYear(),
+            episodes:[episode]
+          };
+          if(hasStg){
+            const pack={range:range||''};
+            if(single) pack.single=single;
+            else pack.links={...stgQualities};
+            newSeason.telegramPacks=[pack];
+          }
+          seasons.push(newSeason);
+        } else {
+          const sIdx=seasons.findIndex(s=>s.id===parseInt(seasonVal));
+          if(sIdx===-1) throw new Error('Season not found!');
+          seasons[sIdx].episodes=(seasons[sIdx].episodes||[])
+            .filter(e=>e.id!==finalNum);
+          seasons[sIdx].episodes.push(episode);
+          seasons[sIdx].episodes.sort((a,b)=>a.id-b.id);
+        }
+        await ref.update({seasons});
+        ['ep_num','ep_title','ep_desc','ep_duration','ep_thumb','ep_thumb_url',
+         'customLangName','new_season_title','new_season_year',
+         'etg_single','stg_single','stg_range']
+          .forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+        episodeLangData={};
+        updateSavedLangsPreview();
+        resetQuality();
+        document.getElementById('epThumbPreview').innerHTML=
+          '<i class="fas fa-image" style="color:var(--text2);font-size:14px"></i>';
+        showEpSuccess('Episode saved!');
+        if(editingSeasonId!==null)
+          loadSeasonEditData(String(editingSeasonId));
+      } catch(e) {
+        document.getElementById('epError').textContent='Error: '+e.message;
+        document.getElementById('epError').style.display='block';
+      } finally {
+        btn.innerHTML='<i class="fas fa-film"></i> Add Episode';
+        btn.disabled=false;
+      }
+    }
+
+    // ===== VIDEO UPLOAD =====
+    async function handleVideoUpload(input) {
+      const file=input.files&&input.files[0];
+      if(!file) return; input.value='';
+      const filename=file.name;
+      const sizeMB=(file.size/1024/1024).toFixed(1);
+      const autoQ=detectQ(filename);
+      const lang=currentLangTab==='Custom'
+        ?(document.getElementById('customLangName').value.trim()||'Japanese')
+        :currentLangTab;
+      const statusEl  =document.getElementById('uploadStatus');
+      const fileNameEl=document.getElementById('uploadFileName');
+      const subTextEl =document.getElementById('uploadSubText');
+      const progBar   =document.getElementById('uploadProgressBar');
+      const progPct   =document.getElementById('uploadPercent');
+      const icon      =document.getElementById('uploadIcon');
+      const selBtn    =document.getElementById('selectVideoBtn');
+      statusEl.style.display='block'; selBtn.disabled=true;
+      fileNameEl.textContent=filename;
+      subTextEl.textContent=`${sizeMB}MB · ${lang} · ${autoQ}`;
+      progBar.style.width='5%'; progPct.textContent='5%';
+      icon.className='fas fa-circle-notch fa-spin';
+      icon.style.color='var(--accent)';
+      try {
+        const sr=await fetch('https://api.gofile.io/servers');
+        const sd=await sr.json();
+        const server=sd.data?.servers?.[0]?.name||'store1';
+        subTextEl.textContent=`Uploading to ${server}.gofile.io...`;
+        progBar.style.width='15%'; progPct.textContent='15%';
+        const url=await new Promise((res,rej)=>{
+          const fd=new FormData();
+          fd.append('file',file,filename);
+          const xhr=new XMLHttpRequest();
+          xhr.upload.addEventListener('progress',e=>{
+            if(e.lengthComputable){
+              const pct=Math.round(15+(e.loaded/e.total)*75);
+              progBar.style.width=pct+'%';
+              progPct.textContent=pct+'%';
+              subTextEl.textContent=
+                `${(e.loaded/1024/1024).toFixed(1)} / ${sizeMB} MB`;
+            }
+          });
+          xhr.addEventListener('load',()=>{
+            try{
+              const r=JSON.parse(xhr.responseText);
+              if(r.status==='ok'){
+                const d=r.data;
+                const fid=d.parentFolder||d.folderId||'';
+                res(`https://${server}.gofile.io/download/direct/${fid}/${filename}`);
+              } else rej(new Error('GoFile failed'));
+            } catch(e){rej(e);}
+          });
+          xhr.addEventListener('error',()=>rej(new Error('Network error')));
+          xhr.open('POST',`https://${server}.gofile.io/uploadFile`);
+          xhr.send(fd);
+        });
+        progBar.style.width='100%'; progPct.textContent='100%';
+        icon.className='fas fa-circle-check';
+        icon.style.color='#27ae60';
+        fileNameEl.textContent=`✅ ${filename}`;
+        subTextEl.textContent=`URL filled in ${autoQ}`;
+        lqQualities[autoQ]=url;
+        renderQTags(lqQualities,'lq_qd','removeLqQ');
+        subTextEl.textContent=`URL added as ${autoQ}`;
+        setTimeout(()=>{statusEl.style.display='none';selBtn.disabled=false;},2000);
+      } catch(e) {
+        icon.className='fas fa-circle-exclamation';
+        icon.style.color='#e50914';
+        fileNameEl.textContent='Upload failed';
+        subTextEl.textContent=e.message;
+        setTimeout(()=>{statusEl.style.display='none';selBtn.disabled=false;
+          progBar.style.width='0%';},3000);
+      }
+    }
+    function detectQ(f){
+      const fl=f.toLowerCase();
+      if(fl.includes('4k')||fl.includes('2160')) return '4k';
+      if(fl.includes('1080')) return '1080p';
+      if(fl.includes('480'))  return '480p';
+      return '720p';
+    }
+
+    // ===== NEWS POST SYSTEM =====
+    let _newsMediaType = 'image';
+    let _newsMediaB64  = '';
+
+    function setNewsMediaType(type) {
+      _newsMediaType = type;
+      document.getElementById('newsMediaFile').accept =
+        type === 'image' ? 'image/*' : 'video/*';
+      const imgBtn = document.getElementById('newsMediaTypeImg');
+      const vidBtn = document.getElementById('newsMediaTypeVid');
+      if (type === 'image') {
+        imgBtn.style.background = 'var(--accent)'; imgBtn.style.color = '#fff'; imgBtn.style.border = 'none';
+        vidBtn.style.background = 'var(--bg3)';    vidBtn.style.color = 'var(--text2)'; vidBtn.style.border = '1.5px solid var(--border)';
+      } else {
+        vidBtn.style.background = 'var(--accent)'; vidBtn.style.color = '#fff'; vidBtn.style.border = 'none';
+        imgBtn.style.background = 'var(--bg3)';    imgBtn.style.color = 'var(--text2)'; imgBtn.style.border = '1.5px solid var(--border)';
+      }
+    }
+
+    function handleNewsMedia(input) {
+      const file = input.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        _newsMediaB64 = e.target.result;
+        _newsMediaType = file.type.startsWith('video') ? 'video' : 'image';
+        setNewsMediaType(_newsMediaType);
+        showNewsPreview(e.target.result, _newsMediaType);
+        document.getElementById('newsMediaUrl').value = '';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function handleNewsMediaUrl(url) {
+      _newsMediaB64 = '';
+      if (!url) { hideNewsPreview(); return; }
+      const isVid = /\.(mp4|webm|mov|avi)$/i.test(url) || url.includes('video');
+      _newsMediaType = isVid ? 'video' : 'image';
+      setNewsMediaType(_newsMediaType);
+      showNewsPreview(url, _newsMediaType);
+    }
+
+    function showNewsPreview(src, type) {
+      const wrap = document.getElementById('newsMediaPreviewWrap');
+      const img  = document.getElementById('newsMediaPreviewImg');
+      const vid  = document.getElementById('newsMediaPreviewVid');
+      wrap.style.display = 'block';
+      if (type === 'video') {
+        img.style.display = 'none';
+        vid.src = src; vid.style.display = 'block'; vid.load();
+      } else {
+        vid.style.display = 'none'; vid.src = '';
+        img.src = src; img.style.display = 'block';
+      }
+    }
+
+    function hideNewsPreview() {
+      document.getElementById('newsMediaPreviewWrap').style.display = 'none';
+    }
+
+    async function postNews() {
+      const headline = document.getElementById('news_headline').value.trim();
+      if (!headline) { alert('Please enter a headline.'); return; }
+      const mediaUrl = _newsMediaB64 || document.getElementById('newsMediaUrl').value.trim();
+      const desc     = document.getElementById('news_desc').value.trim();
+      const btn      = document.getElementById('postNewsBtn');
+      btn.innerHTML  = '<i class="fas fa-circle-notch fa-spin"></i> Posting...';
+      btn.disabled   = true;
+      try {
+        await db.collection('news').add({
+          headline,
+          description: desc,
+          mediaUrl,
+          mediaType: _newsMediaType,
+          postedAt: firebase.firestore.FieldValue.serverTimestamp(),
+          postedAtMs: Date.now(),
+        });
+        // Reset form
+        document.getElementById('news_headline').value = '';
+        document.getElementById('news_desc').value = '';
+        document.getElementById('newsMediaUrl').value = '';
+        document.getElementById('newsMediaFile').value = '';
+        _newsMediaB64 = '';
+        hideNewsPreview();
+        const suc = document.getElementById('newsSuccess');
+        suc.style.display = 'block';
+        setTimeout(() => suc.style.display = 'none', 3000);
+        loadNewsList();
+      } catch(e) { alert('Error: ' + e.message); }
+      btn.innerHTML = '<i class="fas fa-paper-plane"></i> Post News';
+      btn.disabled  = false;
+    }
+
+    async function loadNewsList() {
+      const list = document.getElementById('newsList');
+      if (!list) return;
+      try {
+        const snap = await db.collection('news').get();
+        const newsItems = [];
+        snap.forEach(doc => newsItems.push({id: doc.id, ...doc.data()}));
+        newsItems.sort((a,b) => (b.postedAtMs||0) - (a.postedAtMs||0));
+        if (newsItems.length === 0) { list.innerHTML = '<div style="text-align:center;color:var(--text2);padding:20px;font-size:12px">No news posted yet.</div>'; return; }
+        list.innerHTML = '';
+        newsItems.forEach(d => {
+          const doc = { id: d.id };
+          const date = d.postedAtMs ? new Date(d.postedAtMs).toLocaleString() : '';
+          const row = document.createElement('div');
+          row.style.cssText = 'background:var(--bg2);border:1.5px solid var(--border);border-radius:10px;padding:10px;box-shadow:0 3px 0 var(--btn-3d);margin-bottom:0';
+          row.innerHTML = `
+            <div style="display:flex;align-items:center;gap:10px">
+              ${d.mediaUrl ? `<img src="${d.mediaUrl}" style="width:50px;height:50px;border-radius:6px;object-fit:cover;flex-shrink:0;background:var(--bg3)" onerror="this.style.background='var(--bg3)'"/>` : '<div style="width:50px;height:50px;border-radius:6px;background:var(--bg3);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--text2);font-size:18px"><i class="fas fa-newspaper"></i></div>'}
+              <div style="flex:1;min-width:0">
+                <div style="font-size:12px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${d.headline}</div>
+                <div style="font-size:10px;color:var(--text2);margin-top:2px">${date}</div>
+              </div>
+              <div style="display:flex;gap:6px;flex-shrink:0">
+                <button onclick="openEditNews('${doc.id}')" style="background:var(--bg3);border:1.5px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text2);cursor:pointer;box-shadow:0 3px 0 var(--btn-3d)">
+                  <i class="fas fa-pen"></i>
+                </button>
+                <button onclick="deleteNewsPost('${doc.id}')" style="background:#e74c3c;border:none;border-radius:8px;padding:8px 10px;color:#fff;cursor:pointer;box-shadow:0 3px 0 #922b21">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </div>`;
+          list.appendChild(row);
+        });
+      } catch(e) { list.innerHTML = '<div style="text-align:center;color:var(--text2);padding:20px;font-size:12px">Error loading news.</div>'; }
+    }
+
+    // ===== EDIT NEWS =====
+    let _editingNewsId = null;
+    let _editNewsMediaB64 = '';
+
+    function openEditNews(id) {
+      _editingNewsId = id;
+      _editNewsMediaB64 = '';
+      // Find post in cached list
+      const modal = document.getElementById('editNewsModal');
+      if (modal) modal.style.display = 'flex';
+      // Load fresh from Firestore
+      db.collection('news').doc(id).get().then(doc => {
+        if (!doc.exists) return;
+        const d = doc.data();
+        document.getElementById('en_headline').value   = d.headline    || '';
+        document.getElementById('en_desc').value       = d.description || '';
+        document.getElementById('en_mediaUrl').value   = d.mediaUrl    || '';
+        // Preview
+        const wrap = document.getElementById('en_previewWrap');
+        const img  = document.getElementById('en_previewImg');
+        const vid  = document.getElementById('en_previewVid');
+        if (d.mediaUrl) {
+          wrap.style.display = 'block';
+          if (d.mediaType === 'video') {
+            img.style.display='none'; vid.src=d.mediaUrl; vid.style.display='block';
+          } else {
+            vid.style.display='none'; vid.src=''; img.src=d.mediaUrl; img.style.display='block';
+          }
+        } else {
+          wrap.style.display = 'none';
+        }
+      });
+    }
+
+    function closeEditNews() {
+      document.getElementById('editNewsModal').style.display = 'none';
+      _editingNewsId = null; _editNewsMediaB64 = '';
+    }
+
+    function handleEditNewsFile(input) {
+      const file = input.files[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        _editNewsMediaB64 = e.target.result;
+        document.getElementById('en_mediaUrl').value = '';
+        const isVid = file.type.startsWith('video');
+        const wrap = document.getElementById('en_previewWrap');
+        const img  = document.getElementById('en_previewImg');
+        const vid  = document.getElementById('en_previewVid');
+        wrap.style.display = 'block';
+        if (isVid) { img.style.display='none'; vid.src=e.target.result; vid.style.display='block'; }
+        else { vid.style.display='none'; vid.src=''; img.src=e.target.result; img.style.display='block'; }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function saveEditNews() {
+      if (!_editingNewsId) return;
+      const headline = document.getElementById('en_headline').value.trim();
+      if (!headline) { alert('Headline required'); return; }
+      const btn = document.getElementById('saveEditNewsBtn');
+      btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+      btn.disabled = true;
+      const mediaUrl = _editNewsMediaB64 || document.getElementById('en_mediaUrl').value.trim();
+      const update = { headline, description: document.getElementById('en_desc').value.trim() };
+      if (mediaUrl) {
+        update.mediaUrl  = mediaUrl;
+        update.mediaType = (mediaUrl.startsWith('data:video') || /\.(mp4|webm|mov)$/i.test(mediaUrl)) ? 'video' : 'image';
+      }
+      try {
+        await db.collection('news').doc(_editingNewsId).update(update);
+        closeEditNews();
+        loadNewsList();
+      } catch(e) { alert('Error: ' + e.message); }
+      btn.innerHTML = '<i class="fas fa-floppy-disk"></i> Save';
+      btn.disabled = false;
+    }
+
+    async function deleteNewsPost(id) {
+      if (!confirm('Delete this news post?')) return;
+      try {
+        await db.collection('news').doc(id).delete();
+        loadNewsList();
+      } catch(e) {
+        console.error('Delete error:', e);
+        alert('Delete failed — check Firestore rules: ' + e.message);
+      }
+    }
+
+    // Load news list when news tab is opened
+    const _origSwitchTab = window.switchTab;
+    window.switchTab = function(tab, btn) {
+      if (_origSwitchTab) _origSwitchTab(tab, btn);
+      if (tab === 'news') loadNewsList();
+    };
+
+    // ===== END NEWS SYSTEM =====
+    
+    async function initDashboard() {
+      loadTheme();
+      startRealtimeListener();
+    }
+
+    // Manual refresh button
+    async function refreshDashboard() {
+      const btn = document.getElementById('refreshStatsBtn');
+      if (btn) { btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Loading...'; btn.disabled = true; }
+      startRealtimeListener();
+      if (btn) { setTimeout(() => { btn.innerHTML = '<i class="fas fa-rotate-right"></i> Refresh'; btn.disabled = false; }, 1500); }
+    }
+    loadTheme();
+
+    function startAdmin() {
+      if (sessionStorage.getItem('av_admin') === '1') {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('adminDashboard').style.display = 'block';
+        initDashboard();
+      }
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', startAdmin);
+    } else {
+      startAdmin();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('adminPass').addEventListener('keydown', e => {
+        if (e.key === 'Enter') checkLogin();
+      });
+    });
+  </script>
+</body>
+</html>
